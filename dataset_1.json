@@ -1,0 +1,61 @@
+{
+  "services": [
+    {"id": "s1", "name": "Voice_Converter", "resources": {"CPU": 1, "MEM": 1, "DISK": 1, "BW": 100}},
+    {"id": "s2", "name": "Protocol_Converter", "resources": {"CPU": 1, "MEM": 2, "DISK": 1, "BW": 80}},
+    {"id": "s3", "name": "AR_Generator", "resources": {"CPU": 6, "MEM": 15, "DISK": 4, "BW": 80}},
+    {"id": "s4", "name": "Content_Displayer", "resources": {"CPU": 1, "MEM": 4, "DISK": 1, "BW": 80}}
+  ],
+
+  "nodes": [
+    {"id": "g1", "type": "gateway", "capacity": {"CPU": 1, "MEM": 1, "DISK": 1, "BW": 180}},
+    {"id": "g2", "type": "gateway", "capacity": {"CPU": 1, "MEM": 2, "DISK": 1, "BW": 85}},
+    {"id": "n1", "type": "computing", "capacity": {"CPU": 4, "MEM": 8, "DISK": 10, "BW": 60}},
+    {"id": "n2", "type": "computing", "capacity": {"CPU": 2, "MEM": 8, "DISK": 10, "BW": 80}},
+    {"id": "n3", "type": "computing", "capacity": {"CPU": 6, "MEM": 16, "DISK": 10, "BW": 60}},
+    {"id": "n4", "type": "computing", "capacity": {"CPU": 8, "MEM": 19, "DISK": 20, "BW": 120}}
+  ],
+
+  "latency": {
+    "n1": [120, 37, 57],
+    "n2": [67, 88, 32],
+    "n3": [88, 65, 120],
+    "n4": [49, 158, 98],
+    "g1": [34, 54, 70],
+    "g2": [39, 54, 27]
+  },
+
+  "intentions": [
+    {
+      "id": "i1",
+      "description": "Real-time overlay of machine schematics",
+      "services": ["s2"],
+      "QoS": {"latency": 60, "bandwidth": 30},
+      "extra_resources": {"CPU": 1, "MEM": 1},
+      "weight": 10
+    },
+    {
+      "id": "i2",
+      "description": "Instant maintenance instructions",
+      "services": ["s2","s3"],
+      "QoS": {"latency": 90, "bandwidth": 80},
+      "extra_resources": {"BW": 2},
+      "weight": 8
+    },
+    {
+      "id": "i3",
+      "description": "Highlight errors on anomaly detection",
+      "services": ["s3"],
+      "QoS": {"latency": 60, "bandwidth": 8},
+      "extra_resources": {"CPU": 2},
+      "weight": 6
+    },
+    {
+      "id": "i4",
+      "description": "Unfreezing AR feed under network fluctuations",
+      "services": ["s2","s3"],
+      "QoS": {"latency": 90, "bandwidth": 80},
+      "extra_resources": {"MEM": 2},
+      "weight": 9
+    }
+  ]
+}

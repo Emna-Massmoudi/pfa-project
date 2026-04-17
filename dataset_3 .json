@@ -1,0 +1,71 @@
+{
+  "services": [
+    {"id": "s1", "name": "Voice_Converter", "resources": {"CPU": 1, "MEM": 2, "DISK": 1, "BW": 60}},
+    {"id": "s2", "name": "Protocol_Converter", "resources": {"CPU": 2, "MEM": 4, "DISK": 1, "BW": 80}},
+    {"id": "s3", "name": "AR_Generator", "resources": {"CPU": 6, "MEM": 12, "DISK": 4, "BW": 120}},
+    {"id": "s4", "name": "Content_Displayer", "resources": {"CPU": 2, "MEM": 6, "DISK": 2, "BW": 100}},
+    {"id": "s5", "name": "Error_Detector", "resources": {"CPU": 3, "MEM": 8, "DISK": 2, "BW": 40}},
+    {"id": "s6", "name": "Anomaly_Analyzer", "resources": {"CPU": 5, "MEM": 10, "DISK": 3, "BW": 90}}
+  ],
+
+  "nodes": [
+    {"id": "g1", "type": "gateway", "capacity": {"CPU": 2, "MEM": 4, "DISK": 2, "BW": 100}},
+    {"id": "g2", "type": "gateway", "capacity": {"CPU": 2, "MEM": 3, "DISK": 1, "BW": 80}},
+    {"id": "n1", "type": "computing", "capacity": {"CPU": 8, "MEM": 16, "DISK": 15, "BW": 150}},
+    {"id": "n2", "type": "computing", "capacity": {"CPU": 12, "MEM": 24, "DISK": 25, "BW": 250}},
+    {"id": "n3", "type": "computing", "capacity": {"CPU": 16, "MEM": 32, "DISK": 30, "BW": 300}}
+  ],
+
+  "latency": {
+    "g1": [30, 40, 55],
+    "g2": [35, 50, 65],
+    "n1": [45, 55, 70],
+    "n2": [50, 60, 75],
+    "n3": [60, 70, 85]
+  },
+
+  "intentions": [
+    {
+      "id": "i1",
+      "description": "Quick voice conversion",
+      "services": ["s1"],
+      "QoS": {"latency": 60, "bandwidth": 20},
+      "weight": 5
+    },
+    {
+      "id": "i2",
+      "description": "AR generation with protocol conversion",
+      "services": ["s2", "s3"],
+      "QoS": {"latency": 120, "bandwidth": 150},
+      "weight": 8
+    },
+    {
+      "id": "i3",
+      "description": "Content display with error detection",
+      "services": ["s4", "s5"],
+      "QoS": {"latency": 130, "bandwidth": 90},
+      "weight": 7
+    },
+    {
+      "id": "i4",
+      "description": "Full anomaly analysis",
+      "services": ["s5", "s6"],
+      "QoS": {"latency": 150, "bandwidth": 120},
+      "weight": 9
+    },
+    {
+      "id": "i5",
+      "description": "AR pipeline",
+      "services": ["s1","s2","s3","s4"],
+      "QoS": {"latency": 200, "bandwidth": 250},
+      "weight": 10
+    },
+    {
+      "id": "i6",
+      "description": "Heavy workload (all services)",
+      "services": ["s1","s2","s3","s4","s5","s6"],
+      "QoS": {"latency": 250, "bandwidth": 300},
+      "weight": 12
+    }
+  ]
+}

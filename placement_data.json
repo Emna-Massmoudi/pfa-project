@@ -1,0 +1,2022 @@
+{
+  "Dataset 1": {
+    "placements": [
+      {
+        "id": "i1",
+        "description": "Real-time overlay of machine schematics",
+        "services": [
+          "s2"
+        ],
+        "CPU": 1,
+        "MEM": 2,
+        "DISK": 1,
+        "BW": 80,
+        "qos_lat": 60,
+        "node": "g2",
+        "lat_ms": 40.0,
+        "success": true
+      },
+      {
+        "id": "i2",
+        "description": "Instant maintenance instructions",
+        "services": [
+          "s2",
+          "s3"
+        ],
+        "CPU": 7,
+        "MEM": 17,
+        "DISK": 5,
+        "BW": 160,
+        "qos_lat": 90,
+        "node": null,
+        "lat_ms": null,
+        "success": false
+      },
+      {
+        "id": "i3",
+        "description": "Highlight errors on anomaly detection",
+        "services": [
+          "s3"
+        ],
+        "CPU": 6,
+        "MEM": 15,
+        "DISK": 4,
+        "BW": 80,
+        "qos_lat": 60,
+        "node": null,
+        "lat_ms": null,
+        "success": false
+      },
+      {
+        "id": "i4",
+        "description": "Unfreezing AR feed under network fluctuations",
+        "services": [
+          "s2",
+          "s3"
+        ],
+        "CPU": 7,
+        "MEM": 17,
+        "DISK": 5,
+        "BW": 160,
+        "qos_lat": 90,
+        "node": null,
+        "lat_ms": null,
+        "success": false
+      }
+    ],
+    "node_summary": {
+      "g1": {
+        "type": "gateway",
+        "CPU": 1,
+        "MEM": 1,
+        "DISK": 1,
+        "BW": 180,
+        "lat_avg": 52.7,
+        "placed": []
+      },
+      "g2": {
+        "type": "gateway",
+        "CPU": 1,
+        "MEM": 2,
+        "DISK": 1,
+        "BW": 85,
+        "lat_avg": 40.0,
+        "placed": [
+          "i1"
+        ]
+      },
+      "n1": {
+        "type": "computing",
+        "CPU": 4,
+        "MEM": 8,
+        "DISK": 10,
+        "BW": 60,
+        "lat_avg": 71.3,
+        "placed": []
+      },
+      "n2": {
+        "type": "computing",
+        "CPU": 2,
+        "MEM": 8,
+        "DISK": 10,
+        "BW": 80,
+        "lat_avg": 62.3,
+        "placed": []
+      },
+      "n3": {
+        "type": "computing",
+        "CPU": 6,
+        "MEM": 16,
+        "DISK": 10,
+        "BW": 60,
+        "lat_avg": 91.0,
+        "placed": []
+      },
+      "n4": {
+        "type": "computing",
+        "CPU": 8,
+        "MEM": 19,
+        "DISK": 20,
+        "BW": 120,
+        "lat_avg": 101.7,
+        "placed": []
+      }
+    },
+    "success": 1,
+    "fail": 3,
+    "total": 4,
+    "nb_services": 4,
+    "nb_nodes": 6,
+    "services_list": [
+      {
+        "id": "s1",
+        "name": "Voice_Converter",
+        "CPU": 1,
+        "MEM": 1,
+        "DISK": 1,
+        "BW": 100
+      },
+      {
+        "id": "s2",
+        "name": "Protocol_Converter",
+        "CPU": 1,
+        "MEM": 2,
+        "DISK": 1,
+        "BW": 80
+      },
+      {
+        "id": "s3",
+        "name": "AR_Generator",
+        "CPU": 6,
+        "MEM": 15,
+        "DISK": 4,
+        "BW": 80
+      },
+      {
+        "id": "s4",
+        "name": "Content_Displayer",
+        "CPU": 1,
+        "MEM": 4,
+        "DISK": 1,
+        "BW": 80
+      }
+    ],
+    "nodes_list": [
+      {
+        "id": "g1",
+        "type": "gateway",
+        "CPU": 1,
+        "MEM": 1,
+        "DISK": 1,
+        "BW": 180,
+        "lat": 52.7
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "CPU": 1,
+        "MEM": 2,
+        "DISK": 1,
+        "BW": 85,
+        "lat": 40.0
+      },
+      {
+        "id": "n1",
+        "type": "computing",
+        "CPU": 4,
+        "MEM": 8,
+        "DISK": 10,
+        "BW": 60,
+        "lat": 71.3
+      },
+      {
+        "id": "n2",
+        "type": "computing",
+        "CPU": 2,
+        "MEM": 8,
+        "DISK": 10,
+        "BW": 80,
+        "lat": 62.3
+      },
+      {
+        "id": "n3",
+        "type": "computing",
+        "CPU": 6,
+        "MEM": 16,
+        "DISK": 10,
+        "BW": 60,
+        "lat": 91.0
+      },
+      {
+        "id": "n4",
+        "type": "computing",
+        "CPU": 8,
+        "MEM": 19,
+        "DISK": 20,
+        "BW": 120,
+        "lat": 101.7
+      }
+    ]
+  },
+  "Dataset 2": {
+    "placements": [
+      {
+        "id": "i1",
+        "description": "Quick voice conversion",
+        "services": [
+          "s1"
+        ],
+        "CPU": 1,
+        "MEM": 2,
+        "DISK": 1,
+        "BW": 60,
+        "qos_lat": 60,
+        "node": "g1",
+        "lat_ms": 41.7,
+        "success": true
+      },
+      {
+        "id": "i2",
+        "description": "AR generation with protocol conversion",
+        "services": [
+          "s2",
+          "s3"
+        ],
+        "CPU": 8,
+        "MEM": 16,
+        "DISK": 5,
+        "BW": 200,
+        "qos_lat": 120,
+        "node": "n2",
+        "lat_ms": 61.7,
+        "success": true
+      },
+      {
+        "id": "i3",
+        "description": "Content display with error detection",
+        "services": [
+          "s4",
+          "s5"
+        ],
+        "CPU": 5,
+        "MEM": 14,
+        "DISK": 4,
+        "BW": 140,
+        "qos_lat": 130,
+        "node": "n2",
+        "lat_ms": 61.7,
+        "success": true
+      },
+      {
+        "id": "i4",
+        "description": "Full anomaly analysis",
+        "services": [
+          "s5",
+          "s6"
+        ],
+        "CPU": 8,
+        "MEM": 18,
+        "DISK": 5,
+        "BW": 130,
+        "qos_lat": 150,
+        "node": "n3",
+        "lat_ms": 73.3,
+        "success": true
+      },
+      {
+        "id": "i5",
+        "description": "AR pipeline (s1, s2, s3, s4)",
+        "services": [
+          "s1",
+          "s2",
+          "s3",
+          "s4"
+        ],
+        "CPU": 11,
+        "MEM": 24,
+        "DISK": 8,
+        "BW": 360,
+        "qos_lat": 200,
+        "node": null,
+        "lat_ms": null,
+        "success": false
+      },
+      {
+        "id": "i6",
+        "description": "Heavy workload (all services)",
+        "services": [
+          "s1",
+          "s2",
+          "s3",
+          "s4",
+          "s5",
+          "s6"
+        ],
+        "CPU": 19,
+        "MEM": 42,
+        "DISK": 13,
+        "BW": 490,
+        "qos_lat": 250,
+        "node": null,
+        "lat_ms": null,
+        "success": false
+      }
+    ],
+    "node_summary": {
+      "g1": {
+        "type": "gateway",
+        "CPU": 2,
+        "MEM": 4,
+        "DISK": 2,
+        "BW": 100,
+        "lat_avg": 41.7,
+        "placed": [
+          "i1"
+        ]
+      },
+      "g2": {
+        "type": "gateway",
+        "CPU": 2,
+        "MEM": 3,
+        "DISK": 1,
+        "BW": 80,
+        "lat_avg": 50.0,
+        "placed": []
+      },
+      "n1": {
+        "type": "computing",
+        "CPU": 4,
+        "MEM": 10,
+        "DISK": 10,
+        "BW": 120,
+        "lat_avg": 75.0,
+        "placed": []
+      },
+      "n2": {
+        "type": "computing",
+        "CPU": 8,
+        "MEM": 16,
+        "DISK": 20,
+        "BW": 200,
+        "lat_avg": 61.7,
+        "placed": [
+          "i2",
+          "i3"
+        ]
+      },
+      "n3": {
+        "type": "computing",
+        "CPU": 10,
+        "MEM": 32,
+        "DISK": 30,
+        "BW": 250,
+        "lat_avg": 73.3,
+        "placed": [
+          "i4"
+        ]
+      }
+    },
+    "success": 4,
+    "fail": 2,
+    "total": 6,
+    "nb_services": 6,
+    "nb_nodes": 5,
+    "services_list": [
+      {
+        "id": "s1",
+        "name": "Voice_Converter",
+        "CPU": 1,
+        "MEM": 2,
+        "DISK": 1,
+        "BW": 60
+      },
+      {
+        "id": "s2",
+        "name": "Protocol_Converter",
+        "CPU": 2,
+        "MEM": 4,
+        "DISK": 1,
+        "BW": 80
+      },
+      {
+        "id": "s3",
+        "name": "AR_Generator",
+        "CPU": 6,
+        "MEM": 12,
+        "DISK": 4,
+        "BW": 120
+      },
+      {
+        "id": "s4",
+        "name": "Content_Displayer",
+        "CPU": 2,
+        "MEM": 6,
+        "DISK": 2,
+        "BW": 100
+      },
+      {
+        "id": "s5",
+        "name": "Error_Detector",
+        "CPU": 3,
+        "MEM": 8,
+        "DISK": 2,
+        "BW": 40
+      },
+      {
+        "id": "s6",
+        "name": "Anomaly_Analyzer",
+        "CPU": 5,
+        "MEM": 10,
+        "DISK": 3,
+        "BW": 90
+      }
+    ],
+    "nodes_list": [
+      {
+        "id": "g1",
+        "type": "gateway",
+        "CPU": 2,
+        "MEM": 4,
+        "DISK": 2,
+        "BW": 100,
+        "lat": 41.7
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "CPU": 2,
+        "MEM": 3,
+        "DISK": 1,
+        "BW": 80,
+        "lat": 50.0
+      },
+      {
+        "id": "n1",
+        "type": "computing",
+        "CPU": 4,
+        "MEM": 10,
+        "DISK": 10,
+        "BW": 120,
+        "lat": 75.0
+      },
+      {
+        "id": "n2",
+        "type": "computing",
+        "CPU": 8,
+        "MEM": 16,
+        "DISK": 20,
+        "BW": 200,
+        "lat": 61.7
+      },
+      {
+        "id": "n3",
+        "type": "computing",
+        "CPU": 10,
+        "MEM": 32,
+        "DISK": 30,
+        "BW": 250,
+        "lat": 73.3
+      }
+    ]
+  },
+  "Dataset 3": {
+    "placements": [
+      {
+        "id": "i1",
+        "description": "Quick voice conversion",
+        "services": [
+          "s1"
+        ],
+        "CPU": 1,
+        "MEM": 2,
+        "DISK": 1,
+        "BW": 60,
+        "qos_lat": 60,
+        "node": "g1",
+        "lat_ms": 41.7,
+        "success": true
+      },
+      {
+        "id": "i2",
+        "description": "AR generation with protocol conversion",
+        "services": [
+          "s2",
+          "s3"
+        ],
+        "CPU": 8,
+        "MEM": 16,
+        "DISK": 5,
+        "BW": 200,
+        "qos_lat": 120,
+        "node": "n2",
+        "lat_ms": 61.7,
+        "success": true
+      },
+      {
+        "id": "i3",
+        "description": "Content display with error detection",
+        "services": [
+          "s4",
+          "s5"
+        ],
+        "CPU": 5,
+        "MEM": 14,
+        "DISK": 4,
+        "BW": 140,
+        "qos_lat": 130,
+        "node": "n1",
+        "lat_ms": 56.7,
+        "success": true
+      },
+      {
+        "id": "i4",
+        "description": "Full anomaly analysis",
+        "services": [
+          "s5",
+          "s6"
+        ],
+        "CPU": 8,
+        "MEM": 18,
+        "DISK": 5,
+        "BW": 130,
+        "qos_lat": 150,
+        "node": "n2",
+        "lat_ms": 61.7,
+        "success": true
+      },
+      {
+        "id": "i5",
+        "description": "AR pipeline",
+        "services": [
+          "s1",
+          "s2",
+          "s3",
+          "s4"
+        ],
+        "CPU": 11,
+        "MEM": 24,
+        "DISK": 8,
+        "BW": 360,
+        "qos_lat": 200,
+        "node": null,
+        "lat_ms": null,
+        "success": false
+      },
+      {
+        "id": "i6",
+        "description": "Heavy workload (all services)",
+        "services": [
+          "s1",
+          "s2",
+          "s3",
+          "s4",
+          "s5",
+          "s6"
+        ],
+        "CPU": 19,
+        "MEM": 42,
+        "DISK": 13,
+        "BW": 490,
+        "qos_lat": 250,
+        "node": null,
+        "lat_ms": null,
+        "success": false
+      }
+    ],
+    "node_summary": {
+      "g1": {
+        "type": "gateway",
+        "CPU": 2,
+        "MEM": 4,
+        "DISK": 2,
+        "BW": 100,
+        "lat_avg": 41.7,
+        "placed": [
+          "i1"
+        ]
+      },
+      "g2": {
+        "type": "gateway",
+        "CPU": 2,
+        "MEM": 3,
+        "DISK": 1,
+        "BW": 80,
+        "lat_avg": 50.0,
+        "placed": []
+      },
+      "n1": {
+        "type": "computing",
+        "CPU": 8,
+        "MEM": 16,
+        "DISK": 15,
+        "BW": 150,
+        "lat_avg": 56.7,
+        "placed": [
+          "i3"
+        ]
+      },
+      "n2": {
+        "type": "computing",
+        "CPU": 12,
+        "MEM": 24,
+        "DISK": 25,
+        "BW": 250,
+        "lat_avg": 61.7,
+        "placed": [
+          "i2",
+          "i4"
+        ]
+      },
+      "n3": {
+        "type": "computing",
+        "CPU": 16,
+        "MEM": 32,
+        "DISK": 30,
+        "BW": 300,
+        "lat_avg": 71.7,
+        "placed": []
+      }
+    },
+    "success": 4,
+    "fail": 2,
+    "total": 6,
+    "nb_services": 6,
+    "nb_nodes": 5,
+    "services_list": [
+      {
+        "id": "s1",
+        "name": "Voice_Converter",
+        "CPU": 1,
+        "MEM": 2,
+        "DISK": 1,
+        "BW": 60
+      },
+      {
+        "id": "s2",
+        "name": "Protocol_Converter",
+        "CPU": 2,
+        "MEM": 4,
+        "DISK": 1,
+        "BW": 80
+      },
+      {
+        "id": "s3",
+        "name": "AR_Generator",
+        "CPU": 6,
+        "MEM": 12,
+        "DISK": 4,
+        "BW": 120
+      },
+      {
+        "id": "s4",
+        "name": "Content_Displayer",
+        "CPU": 2,
+        "MEM": 6,
+        "DISK": 2,
+        "BW": 100
+      },
+      {
+        "id": "s5",
+        "name": "Error_Detector",
+        "CPU": 3,
+        "MEM": 8,
+        "DISK": 2,
+        "BW": 40
+      },
+      {
+        "id": "s6",
+        "name": "Anomaly_Analyzer",
+        "CPU": 5,
+        "MEM": 10,
+        "DISK": 3,
+        "BW": 90
+      }
+    ],
+    "nodes_list": [
+      {
+        "id": "g1",
+        "type": "gateway",
+        "CPU": 2,
+        "MEM": 4,
+        "DISK": 2,
+        "BW": 100,
+        "lat": 41.7
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "CPU": 2,
+        "MEM": 3,
+        "DISK": 1,
+        "BW": 80,
+        "lat": 50.0
+      },
+      {
+        "id": "n1",
+        "type": "computing",
+        "CPU": 8,
+        "MEM": 16,
+        "DISK": 15,
+        "BW": 150,
+        "lat": 56.7
+      },
+      {
+        "id": "n2",
+        "type": "computing",
+        "CPU": 12,
+        "MEM": 24,
+        "DISK": 25,
+        "BW": 250,
+        "lat": 61.7
+      },
+      {
+        "id": "n3",
+        "type": "computing",
+        "CPU": 16,
+        "MEM": 32,
+        "DISK": 30,
+        "BW": 300,
+        "lat": 71.7
+      }
+    ]
+  },
+  "Dataset 4": {
+    "placements": [
+      {
+        "id": "i1",
+        "description": "How do I safely replace the power unit of machine X?",
+        "services": [
+          "s1"
+        ],
+        "CPU": 1,
+        "MEM": 2,
+        "DISK": 1,
+        "BW": 60,
+        "qos_lat": 50,
+        "node": "g1",
+        "lat_ms": 41.7,
+        "success": true
+      },
+      {
+        "id": "i2",
+        "description": "Retrieve the operational status of machine X.",
+        "services": [
+          "s2"
+        ],
+        "CPU": 2,
+        "MEM": 4,
+        "DISK": 1,
+        "BW": 80,
+        "qos_lat": 60,
+        "node": "g1",
+        "lat_ms": 41.7,
+        "success": true
+      },
+      {
+        "id": "i3",
+        "description": "Show me the AR sequence for power unit assembly.",
+        "services": [
+          "s3"
+        ],
+        "CPU": 6,
+        "MEM": 12,
+        "DISK": 4,
+        "BW": 120,
+        "qos_lat": 100,
+        "node": "n1",
+        "lat_ms": 56.7,
+        "success": true
+      },
+      {
+        "id": "i4",
+        "description": "Highlight errors during assembly.",
+        "services": [
+          "s4",
+          "s5"
+        ],
+        "CPU": 5,
+        "MEM": 14,
+        "DISK": 4,
+        "BW": 140,
+        "qos_lat": 120,
+        "node": "n1",
+        "lat_ms": 56.7,
+        "success": true
+      },
+      {
+        "id": "i5",
+        "description": "Check motor temperature anomalies.",
+        "services": [
+          "s5",
+          "s6"
+        ],
+        "CPU": 8,
+        "MEM": 18,
+        "DISK": 5,
+        "BW": 130,
+        "qos_lat": 130,
+        "node": "n2",
+        "lat_ms": 61.7,
+        "success": true
+      },
+      {
+        "id": "i6",
+        "description": "Verify lubrication of moving parts.",
+        "services": [
+          "s5",
+          "s6"
+        ],
+        "CPU": 8,
+        "MEM": 18,
+        "DISK": 5,
+        "BW": 130,
+        "qos_lat": 140,
+        "node": "n2",
+        "lat_ms": 61.7,
+        "success": true
+      },
+      {
+        "id": "i7",
+        "description": "Display AR instructions for belt replacement.",
+        "services": [
+          "s3",
+          "s4"
+        ],
+        "CPU": 8,
+        "MEM": 18,
+        "DISK": 6,
+        "BW": 220,
+        "qos_lat": 110,
+        "node": "n2",
+        "lat_ms": 61.7,
+        "success": true
+      },
+      {
+        "id": "i8",
+        "description": "Detect wear or damage on conveyor belt.",
+        "services": [
+          "s5"
+        ],
+        "CPU": 3,
+        "MEM": 8,
+        "DISK": 2,
+        "BW": 40,
+        "qos_lat": 120,
+        "node": "n1",
+        "lat_ms": 56.7,
+        "success": true
+      },
+      {
+        "id": "i9",
+        "description": "Provide AR guidance for gear alignment.",
+        "services": [
+          "s3",
+          "s4"
+        ],
+        "CPU": 8,
+        "MEM": 18,
+        "DISK": 6,
+        "BW": 220,
+        "qos_lat": 100,
+        "node": "n2",
+        "lat_ms": 61.7,
+        "success": true
+      },
+      {
+        "id": "i10",
+        "description": "Analyze vibration data for abnormal patterns.",
+        "services": [
+          "s6"
+        ],
+        "CPU": 5,
+        "MEM": 10,
+        "DISK": 3,
+        "BW": 90,
+        "qos_lat": 150,
+        "node": "n1",
+        "lat_ms": 56.7,
+        "success": true
+      },
+      {
+        "id": "i11",
+        "description": "Check electrical connections and signal integrity.",
+        "services": [
+          "s2",
+          "s5"
+        ],
+        "CPU": 5,
+        "MEM": 12,
+        "DISK": 3,
+        "BW": 120,
+        "qos_lat": 130,
+        "node": "n1",
+        "lat_ms": 56.7,
+        "success": true
+      },
+      {
+        "id": "i12",
+        "description": "Display AR safety overlay before powering machine.",
+        "services": [
+          "s3",
+          "s4"
+        ],
+        "CPU": 8,
+        "MEM": 18,
+        "DISK": 6,
+        "BW": 220,
+        "qos_lat": 90,
+        "node": "n2",
+        "lat_ms": 61.7,
+        "success": true
+      },
+      {
+        "id": "i13",
+        "description": "Monitor real-time temperature and current sensors.",
+        "services": [
+          "s2",
+          "s6"
+        ],
+        "CPU": 7,
+        "MEM": 14,
+        "DISK": 4,
+        "BW": 170,
+        "qos_lat": 140,
+        "node": "n2",
+        "lat_ms": 61.7,
+        "success": true
+      },
+      {
+        "id": "i14",
+        "description": "Detect errors in completed assembly sequence.",
+        "services": [
+          "s4",
+          "s5"
+        ],
+        "CPU": 5,
+        "MEM": 14,
+        "DISK": 4,
+        "BW": 140,
+        "qos_lat": 120,
+        "node": "n1",
+        "lat_ms": 56.7,
+        "success": true
+      },
+      {
+        "id": "i15",
+        "description": "Perform full diagnostics after maintenance.",
+        "services": [
+          "s1",
+          "s2",
+          "s3",
+          "s4",
+          "s5",
+          "s6"
+        ],
+        "CPU": 19,
+        "MEM": 42,
+        "DISK": 13,
+        "BW": 490,
+        "qos_lat": 250,
+        "node": null,
+        "lat_ms": null,
+        "success": false
+      },
+      {
+        "id": "i16",
+        "description": "Generate predictive maintenance alerts for high-risk components.",
+        "services": [
+          "s5",
+          "s6"
+        ],
+        "CPU": 8,
+        "MEM": 18,
+        "DISK": 5,
+        "BW": 130,
+        "qos_lat": 150,
+        "node": "n2",
+        "lat_ms": 61.7,
+        "success": true
+      },
+      {
+        "id": "i17",
+        "description": "Provide AR guidance for troubleshooting detected faults.",
+        "services": [
+          "s3",
+          "s4",
+          "s5"
+        ],
+        "CPU": 11,
+        "MEM": 26,
+        "DISK": 8,
+        "BW": 260,
+        "qos_lat": 120,
+        "node": "n3",
+        "lat_ms": 71.7,
+        "success": true
+      },
+      {
+        "id": "i18",
+        "description": "Verify post-maintenance operational efficiency.",
+        "services": [
+          "s2",
+          "s6"
+        ],
+        "CPU": 7,
+        "MEM": 14,
+        "DISK": 4,
+        "BW": 170,
+        "qos_lat": 130,
+        "node": "n2",
+        "lat_ms": 61.7,
+        "success": true
+      },
+      {
+        "id": "i19",
+        "description": "Display AR summary of completed maintenance steps.",
+        "services": [
+          "s3",
+          "s4"
+        ],
+        "CPU": 8,
+        "MEM": 18,
+        "DISK": 6,
+        "BW": 220,
+        "qos_lat": 100,
+        "node": "n2",
+        "lat_ms": 61.7,
+        "success": true
+      },
+      {
+        "id": "i20",
+        "description": "Alert technician of components needing attention before next scheduled maintenance.",
+        "services": [
+          "s5",
+          "s6"
+        ],
+        "CPU": 8,
+        "MEM": 18,
+        "DISK": 5,
+        "BW": 130,
+        "qos_lat": 150,
+        "node": "n2",
+        "lat_ms": 61.7,
+        "success": true
+      },
+      {
+        "id": "i21",
+        "description": "Check conveyor belt tension and alignment.",
+        "services": [
+          "s5",
+          "s6"
+        ],
+        "CPU": 8,
+        "MEM": 18,
+        "DISK": 5,
+        "BW": 130,
+        "qos_lat": 120,
+        "node": "n2",
+        "lat_ms": 61.7,
+        "success": true
+      },
+      {
+        "id": "i22",
+        "description": "Show AR overlay for fan assembly procedure.",
+        "services": [
+          "s3",
+          "s4"
+        ],
+        "CPU": 8,
+        "MEM": 18,
+        "DISK": 6,
+        "BW": 220,
+        "qos_lat": 100,
+        "node": "n2",
+        "lat_ms": 61.7,
+        "success": true
+      },
+      {
+        "id": "i23",
+        "description": "Analyze fan vibrations for abnormal patterns.",
+        "services": [
+          "s6"
+        ],
+        "CPU": 5,
+        "MEM": 10,
+        "DISK": 3,
+        "BW": 90,
+        "qos_lat": 150,
+        "node": "n1",
+        "lat_ms": 56.7,
+        "success": true
+      },
+      {
+        "id": "i24",
+        "description": "Display AR safety instructions for hazardous areas.",
+        "services": [
+          "s3",
+          "s4"
+        ],
+        "CPU": 8,
+        "MEM": 18,
+        "DISK": 6,
+        "BW": 220,
+        "qos_lat": 90,
+        "node": "n2",
+        "lat_ms": 61.7,
+        "success": true
+      },
+      {
+        "id": "i25",
+        "description": "Capture voice commands for multi-step maintenance tasks.",
+        "services": [
+          "s1"
+        ],
+        "CPU": 1,
+        "MEM": 2,
+        "DISK": 1,
+        "BW": 60,
+        "qos_lat": 50,
+        "node": "g1",
+        "lat_ms": 41.7,
+        "success": true
+      },
+      {
+        "id": "i26",
+        "description": "Retrieve logs of recent machine errors.",
+        "services": [
+          "s2"
+        ],
+        "CPU": 2,
+        "MEM": 4,
+        "DISK": 1,
+        "BW": 80,
+        "qos_lat": 60,
+        "node": "g1",
+        "lat_ms": 41.7,
+        "success": true
+      },
+      {
+        "id": "i27",
+        "description": "Provide AR instructions for valve replacement.",
+        "services": [
+          "s3",
+          "s4"
+        ],
+        "CPU": 8,
+        "MEM": 18,
+        "DISK": 6,
+        "BW": 220,
+        "qos_lat": 100,
+        "node": "n2",
+        "lat_ms": 61.7,
+        "success": true
+      },
+      {
+        "id": "i28",
+        "description": "Detect leaks in hydraulic system.",
+        "services": [
+          "s5",
+          "s6"
+        ],
+        "CPU": 8,
+        "MEM": 18,
+        "DISK": 5,
+        "BW": 130,
+        "qos_lat": 130,
+        "node": "n2",
+        "lat_ms": 61.7,
+        "success": true
+      },
+      {
+        "id": "i29",
+        "description": "Check pressure levels in pipelines.",
+        "services": [
+          "s5",
+          "s6"
+        ],
+        "CPU": 8,
+        "MEM": 18,
+        "DISK": 5,
+        "BW": 130,
+        "qos_lat": 140,
+        "node": "n2",
+        "lat_ms": 61.7,
+        "success": true
+      },
+      {
+        "id": "i30",
+        "description": "Display AR guidance for gearbox inspection.",
+        "services": [
+          "s3",
+          "s4"
+        ],
+        "CPU": 8,
+        "MEM": 18,
+        "DISK": 6,
+        "BW": 220,
+        "qos_lat": 110,
+        "node": "n2",
+        "lat_ms": 61.7,
+        "success": true
+      },
+      {
+        "id": "i31",
+        "description": "Detect wear or damage on gearbox teeth.",
+        "services": [
+          "s5"
+        ],
+        "CPU": 3,
+        "MEM": 8,
+        "DISK": 2,
+        "BW": 40,
+        "qos_lat": 120,
+        "node": "n1",
+        "lat_ms": 56.7,
+        "success": true
+      },
+      {
+        "id": "i32",
+        "description": "Analyze motor load and vibrations.",
+        "services": [
+          "s6"
+        ],
+        "CPU": 5,
+        "MEM": 10,
+        "DISK": 3,
+        "BW": 90,
+        "qos_lat": 150,
+        "node": "n1",
+        "lat_ms": 56.7,
+        "success": true
+      },
+      {
+        "id": "i33",
+        "description": "Verify electrical cable connections.",
+        "services": [
+          "s2",
+          "s5"
+        ],
+        "CPU": 5,
+        "MEM": 12,
+        "DISK": 3,
+        "BW": 120,
+        "qos_lat": 130,
+        "node": "n1",
+        "lat_ms": 56.7,
+        "success": true
+      },
+      {
+        "id": "i34",
+        "description": "Display AR overlay for safety before reactivating machine.",
+        "services": [
+          "s3",
+          "s4"
+        ],
+        "CPU": 8,
+        "MEM": 18,
+        "DISK": 6,
+        "BW": 220,
+        "qos_lat": 90,
+        "node": "n2",
+        "lat_ms": 61.7,
+        "success": true
+      },
+      {
+        "id": "i35",
+        "description": "Monitor sensors for temperature, pressure, and vibration.",
+        "services": [
+          "s2",
+          "s6"
+        ],
+        "CPU": 7,
+        "MEM": 14,
+        "DISK": 4,
+        "BW": 170,
+        "qos_lat": 140,
+        "node": "n2",
+        "lat_ms": 61.7,
+        "success": true
+      },
+      {
+        "id": "i36",
+        "description": "Detect inconsistencies in assembly process.",
+        "services": [
+          "s4",
+          "s5"
+        ],
+        "CPU": 5,
+        "MEM": 14,
+        "DISK": 4,
+        "BW": 140,
+        "qos_lat": 120,
+        "node": "n1",
+        "lat_ms": 56.7,
+        "success": true
+      },
+      {
+        "id": "i37",
+        "description": "Perform full system diagnostics after maintenance.",
+        "services": [
+          "s1",
+          "s2",
+          "s3",
+          "s4",
+          "s5",
+          "s6"
+        ],
+        "CPU": 19,
+        "MEM": 42,
+        "DISK": 13,
+        "BW": 490,
+        "qos_lat": 250,
+        "node": null,
+        "lat_ms": null,
+        "success": false
+      },
+      {
+        "id": "i38",
+        "description": "Generate predictive alerts for high-risk components.",
+        "services": [
+          "s5",
+          "s6"
+        ],
+        "CPU": 8,
+        "MEM": 18,
+        "DISK": 5,
+        "BW": 130,
+        "qos_lat": 150,
+        "node": "n2",
+        "lat_ms": 61.7,
+        "success": true
+      },
+      {
+        "id": "i39",
+        "description": "Provide AR guidance for troubleshooting faults.",
+        "services": [
+          "s3",
+          "s4",
+          "s5"
+        ],
+        "CPU": 11,
+        "MEM": 26,
+        "DISK": 8,
+        "BW": 260,
+        "qos_lat": 120,
+        "node": "n3",
+        "lat_ms": 71.7,
+        "success": true
+      },
+      {
+        "id": "i40",
+        "description": "Verify post-maintenance efficiency.",
+        "services": [
+          "s2",
+          "s6"
+        ],
+        "CPU": 7,
+        "MEM": 14,
+        "DISK": 4,
+        "BW": 170,
+        "qos_lat": 130,
+        "node": "n2",
+        "lat_ms": 61.7,
+        "success": true
+      },
+      {
+        "id": "i41",
+        "description": "Display AR summary of all maintenance steps.",
+        "services": [
+          "s3",
+          "s4"
+        ],
+        "CPU": 8,
+        "MEM": 18,
+        "DISK": 6,
+        "BW": 220,
+        "qos_lat": 100,
+        "node": "n2",
+        "lat_ms": 61.7,
+        "success": true
+      },
+      {
+        "id": "i42",
+        "description": "Alert technician of components needing attention.",
+        "services": [
+          "s5",
+          "s6"
+        ],
+        "CPU": 8,
+        "MEM": 18,
+        "DISK": 5,
+        "BW": 130,
+        "qos_lat": 150,
+        "node": "n2",
+        "lat_ms": 61.7,
+        "success": true
+      },
+      {
+        "id": "i43",
+        "description": "Capture video for quality assurance review.",
+        "services": [
+          "s1",
+          "s3"
+        ],
+        "CPU": 7,
+        "MEM": 14,
+        "DISK": 5,
+        "BW": 180,
+        "qos_lat": 100,
+        "node": "n2",
+        "lat_ms": 61.7,
+        "success": true
+      },
+      {
+        "id": "i44",
+        "description": "Retrieve historical fault data for trend analysis.",
+        "services": [
+          "s2",
+          "s6"
+        ],
+        "CPU": 7,
+        "MEM": 14,
+        "DISK": 4,
+        "BW": 170,
+        "qos_lat": 140,
+        "node": "n2",
+        "lat_ms": 61.7,
+        "success": true
+      },
+      {
+        "id": "i45",
+        "description": "Display AR guidance for motor replacement.",
+        "services": [
+          "s3",
+          "s4"
+        ],
+        "CPU": 8,
+        "MEM": 18,
+        "DISK": 6,
+        "BW": 220,
+        "qos_lat": 100,
+        "node": "n2",
+        "lat_ms": 61.7,
+        "success": true
+      },
+      {
+        "id": "i46",
+        "description": "Detect anomalies in motor current and vibration.",
+        "services": [
+          "s5",
+          "s6"
+        ],
+        "CPU": 8,
+        "MEM": 18,
+        "DISK": 5,
+        "BW": 130,
+        "qos_lat": 150,
+        "node": "n2",
+        "lat_ms": 61.7,
+        "success": true
+      },
+      {
+        "id": "i47",
+        "description": "Verify alignment of all mechanical assemblies.",
+        "services": [
+          "s4",
+          "s5"
+        ],
+        "CPU": 5,
+        "MEM": 14,
+        "DISK": 4,
+        "BW": 140,
+        "qos_lat": 120,
+        "node": "n1",
+        "lat_ms": 56.7,
+        "success": true
+      },
+      {
+        "id": "i48",
+        "description": "Perform final system check before operation.",
+        "services": [
+          "s1",
+          "s2",
+          "s3",
+          "s4",
+          "s5",
+          "s6"
+        ],
+        "CPU": 19,
+        "MEM": 42,
+        "DISK": 13,
+        "BW": 490,
+        "qos_lat": 250,
+        "node": null,
+        "lat_ms": null,
+        "success": false
+      },
+      {
+        "id": "i49",
+        "description": "Generate maintenance report and store for records.",
+        "services": [
+          "s2",
+          "s3",
+          "s4"
+        ],
+        "CPU": 10,
+        "MEM": 22,
+        "DISK": 7,
+        "BW": 300,
+        "qos_lat": 100,
+        "node": "n3",
+        "lat_ms": 71.7,
+        "success": true
+      },
+      {
+        "id": "i50",
+        "description": "Send alerts for components due for next maintenance cycle.",
+        "services": [
+          "s5",
+          "s6"
+        ],
+        "CPU": 8,
+        "MEM": 18,
+        "DISK": 5,
+        "BW": 130,
+        "qos_lat": 150,
+        "node": "n2",
+        "lat_ms": 61.7,
+        "success": true
+      }
+    ],
+    "node_summary": {
+      "g1": {
+        "type": "gateway",
+        "CPU": 2,
+        "MEM": 4,
+        "DISK": 2,
+        "BW": 100,
+        "lat_avg": 41.7,
+        "placed": [
+          "i1",
+          "i2",
+          "i25",
+          "i26"
+        ]
+      },
+      "g2": {
+        "type": "gateway",
+        "CPU": 2,
+        "MEM": 3,
+        "DISK": 1,
+        "BW": 80,
+        "lat_avg": 50.0,
+        "placed": []
+      },
+      "g3": {
+        "type": "gateway",
+        "CPU": 3,
+        "MEM": 5,
+        "DISK": 2,
+        "BW": 120,
+        "lat_avg": 45.7,
+        "placed": []
+      },
+      "g4": {
+        "type": "gateway",
+        "CPU": 2,
+        "MEM": 4,
+        "DISK": 2,
+        "BW": 90,
+        "lat_avg": 41.7,
+        "placed": []
+      },
+      "g5": {
+        "type": "gateway",
+        "CPU": 2,
+        "MEM": 3,
+        "DISK": 1,
+        "BW": 80,
+        "lat_avg": 50.0,
+        "placed": []
+      },
+      "n1": {
+        "type": "computing",
+        "CPU": 8,
+        "MEM": 16,
+        "DISK": 15,
+        "BW": 150,
+        "lat_avg": 56.7,
+        "placed": [
+          "i3",
+          "i4",
+          "i8",
+          "i10",
+          "i11",
+          "i14",
+          "i23",
+          "i31",
+          "i32",
+          "i33",
+          "i36",
+          "i47"
+        ]
+      },
+      "n2": {
+        "type": "computing",
+        "CPU": 12,
+        "MEM": 24,
+        "DISK": 25,
+        "BW": 250,
+        "lat_avg": 61.7,
+        "placed": [
+          "i5",
+          "i6",
+          "i7",
+          "i9",
+          "i12",
+          "i13",
+          "i16",
+          "i18",
+          "i19",
+          "i20",
+          "i21",
+          "i22",
+          "i24",
+          "i27",
+          "i28",
+          "i29",
+          "i30",
+          "i34",
+          "i35",
+          "i38",
+          "i40",
+          "i41",
+          "i42",
+          "i43",
+          "i44",
+          "i45",
+          "i46",
+          "i50"
+        ]
+      },
+      "n3": {
+        "type": "computing",
+        "CPU": 16,
+        "MEM": 32,
+        "DISK": 30,
+        "BW": 300,
+        "lat_avg": 71.7,
+        "placed": [
+          "i17",
+          "i39",
+          "i49"
+        ]
+      },
+      "n4": {
+        "type": "computing",
+        "CPU": 10,
+        "MEM": 20,
+        "DISK": 20,
+        "BW": 200,
+        "lat_avg": 66.7,
+        "placed": []
+      },
+      "n5": {
+        "type": "computing",
+        "CPU": 14,
+        "MEM": 28,
+        "DISK": 25,
+        "BW": 220,
+        "lat_avg": 61.7,
+        "placed": []
+      },
+      "n6": {
+        "type": "computing",
+        "CPU": 18,
+        "MEM": 36,
+        "DISK": 35,
+        "BW": 280,
+        "lat_avg": 71.7,
+        "placed": []
+      },
+      "n7": {
+        "type": "computing",
+        "CPU": 20,
+        "MEM": 40,
+        "DISK": 40,
+        "BW": 300,
+        "lat_avg": 76.7,
+        "placed": []
+      },
+      "n8": {
+        "type": "computing",
+        "CPU": 8,
+        "MEM": 16,
+        "DISK": 15,
+        "BW": 150,
+        "lat_avg": 56.7,
+        "placed": []
+      },
+      "n9": {
+        "type": "computing",
+        "CPU": 12,
+        "MEM": 24,
+        "DISK": 25,
+        "BW": 250,
+        "lat_avg": 61.7,
+        "placed": []
+      },
+      "n10": {
+        "type": "computing",
+        "CPU": 16,
+        "MEM": 32,
+        "DISK": 30,
+        "BW": 300,
+        "lat_avg": 71.7,
+        "placed": []
+      },
+      "n11": {
+        "type": "computing",
+        "CPU": 10,
+        "MEM": 20,
+        "DISK": 20,
+        "BW": 200,
+        "lat_avg": 66.7,
+        "placed": []
+      },
+      "n12": {
+        "type": "computing",
+        "CPU": 14,
+        "MEM": 28,
+        "DISK": 25,
+        "BW": 220,
+        "lat_avg": 61.7,
+        "placed": []
+      },
+      "n13": {
+        "type": "computing",
+        "CPU": 18,
+        "MEM": 36,
+        "DISK": 35,
+        "BW": 280,
+        "lat_avg": 71.7,
+        "placed": []
+      },
+      "n14": {
+        "type": "computing",
+        "CPU": 20,
+        "MEM": 40,
+        "DISK": 40,
+        "BW": 300,
+        "lat_avg": 76.7,
+        "placed": []
+      },
+      "n15": {
+        "type": "computing",
+        "CPU": 16,
+        "MEM": 32,
+        "DISK": 30,
+        "BW": 250,
+        "lat_avg": 71.7,
+        "placed": []
+      }
+    },
+    "success": 47,
+    "fail": 3,
+    "total": 50,
+    "nb_services": 6,
+    "nb_nodes": 20,
+    "services_list": [
+      {
+        "id": "s1",
+        "name": "Voice_Converter",
+        "CPU": 1,
+        "MEM": 2,
+        "DISK": 1,
+        "BW": 60
+      },
+      {
+        "id": "s2",
+        "name": "Protocol_Converter",
+        "CPU": 2,
+        "MEM": 4,
+        "DISK": 1,
+        "BW": 80
+      },
+      {
+        "id": "s3",
+        "name": "AR_Generator",
+        "CPU": 6,
+        "MEM": 12,
+        "DISK": 4,
+        "BW": 120
+      },
+      {
+        "id": "s4",
+        "name": "Content_Displayer",
+        "CPU": 2,
+        "MEM": 6,
+        "DISK": 2,
+        "BW": 100
+      },
+      {
+        "id": "s5",
+        "name": "Error_Detector",
+        "CPU": 3,
+        "MEM": 8,
+        "DISK": 2,
+        "BW": 40
+      },
+      {
+        "id": "s6",
+        "name": "Anomaly_Analyzer",
+        "CPU": 5,
+        "MEM": 10,
+        "DISK": 3,
+        "BW": 90
+      }
+    ],
+    "nodes_list": [
+      {
+        "id": "g1",
+        "type": "gateway",
+        "CPU": 2,
+        "MEM": 4,
+        "DISK": 2,
+        "BW": 100,
+        "lat": 41.7
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "CPU": 2,
+        "MEM": 3,
+        "DISK": 1,
+        "BW": 80,
+        "lat": 50.0
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "CPU": 3,
+        "MEM": 5,
+        "DISK": 2,
+        "BW": 120,
+        "lat": 45.7
+      },
+      {
+        "id": "g4",
+        "type": "gateway",
+        "CPU": 2,
+        "MEM": 4,
+        "DISK": 2,
+        "BW": 90,
+        "lat": 41.7
+      },
+      {
+        "id": "g5",
+        "type": "gateway",
+        "CPU": 2,
+        "MEM": 3,
+        "DISK": 1,
+        "BW": 80,
+        "lat": 50.0
+      },
+      {
+        "id": "n1",
+        "type": "computing",
+        "CPU": 8,
+        "MEM": 16,
+        "DISK": 15,
+        "BW": 150,
+        "lat": 56.7
+      },
+      {
+        "id": "n2",
+        "type": "computing",
+        "CPU": 12,
+        "MEM": 24,
+        "DISK": 25,
+        "BW": 250,
+        "lat": 61.7
+      },
+      {
+        "id": "n3",
+        "type": "computing",
+        "CPU": 16,
+        "MEM": 32,
+        "DISK": 30,
+        "BW": 300,
+        "lat": 71.7
+      },
+      {
+        "id": "n4",
+        "type": "computing",
+        "CPU": 10,
+        "MEM": 20,
+        "DISK": 20,
+        "BW": 200,
+        "lat": 66.7
+      },
+      {
+        "id": "n5",
+        "type": "computing",
+        "CPU": 14,
+        "MEM": 28,
+        "DISK": 25,
+        "BW": 220,
+        "lat": 61.7
+      },
+      {
+        "id": "n6",
+        "type": "computing",
+        "CPU": 18,
+        "MEM": 36,
+        "DISK": 35,
+        "BW": 280,
+        "lat": 71.7
+      },
+      {
+        "id": "n7",
+        "type": "computing",
+        "CPU": 20,
+        "MEM": 40,
+        "DISK": 40,
+        "BW": 300,
+        "lat": 76.7
+      },
+      {
+        "id": "n8",
+        "type": "computing",
+        "CPU": 8,
+        "MEM": 16,
+        "DISK": 15,
+        "BW": 150,
+        "lat": 56.7
+      },
+      {
+        "id": "n9",
+        "type": "computing",
+        "CPU": 12,
+        "MEM": 24,
+        "DISK": 25,
+        "BW": 250,
+        "lat": 61.7
+      },
+      {
+        "id": "n10",
+        "type": "computing",
+        "CPU": 16,
+        "MEM": 32,
+        "DISK": 30,
+        "BW": 300,
+        "lat": 71.7
+      },
+      {
+        "id": "n11",
+        "type": "computing",
+        "CPU": 10,
+        "MEM": 20,
+        "DISK": 20,
+        "BW": 200,
+        "lat": 66.7
+      },
+      {
+        "id": "n12",
+        "type": "computing",
+        "CPU": 14,
+        "MEM": 28,
+        "DISK": 25,
+        "BW": 220,
+        "lat": 61.7
+      },
+      {
+        "id": "n13",
+        "type": "computing",
+        "CPU": 18,
+        "MEM": 36,
+        "DISK": 35,
+        "BW": 280,
+        "lat": 71.7
+      },
+      {
+        "id": "n14",
+        "type": "computing",
+        "CPU": 20,
+        "MEM": 40,
+        "DISK": 40,
+        "BW": 300,
+        "lat": 76.7
+      },
+      {
+        "id": "n15",
+        "type": "computing",
+        "CPU": 16,
+        "MEM": 32,
+        "DISK": 30,
+        "BW": 250,
+        "lat": 71.7
+      }
+    ]
+  }
+}
