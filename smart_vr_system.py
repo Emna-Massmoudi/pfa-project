@@ -9,12 +9,12 @@ import json
 # =====================
 # Charger dataset
 # =====================
-with open("dataset_3 .json", "r", encoding="utf-8") as f:
+with open("dataset_4.json", "r", encoding="utf-8") as f:
     data = json.load(f)
 
-intentions = data["intentions"]
-services = data["services"]
-nodes = data["nodes"]
+intentions  = data["intentions"]
+services    = data["services"]
+nodes       = data["nodes"]
 latency_map = data["latency"]
 
 print("Chargement Whisper...")
@@ -23,42 +23,51 @@ model = whisper.load_model("base")
 fs = 16000
 
 # =====================
-# IA intention
+# Détection intention via Ollama
 # =====================
 def detect_intention_with_ai(text):
-
     intentions_list = "\n".join(
         [f"{i['id']} : {i['description']}" for i in intentions]
     )
 
-    prompt = f"""
-Tu es un système de classification.
+    prompt = f"""TASK: Match user text to intentions.
+RULES:
+- Return MAXIMUM 3 IDs
+- Only IDs that DIRECTLY match the user request
+- Format: i5,i10 (IDs only, comma separated, nothing else)
 
-Choisis l'intention EXACTE parmi cette liste.
-Ne devine pas.
-Retourne seulement l'ID.
-
-INTENTIONS :
+INTENTIONS:
 {intentions_list}
 
-Texte utilisateur :
-{text}
-"""
+USER: {text}
+
+ANSWER (max 3 IDs):"""
 
     response = ollama.chat(
-        model="llama3",
-        messages=[{"role": "user", "content": prompt}]
+        model="llama3.2:1b",
+        messages=[{"role": "user", "content": prompt}],
+        options={"temperature": 0, "num_predict": 20}  # ← limite la réponse à 20 tokens
     )
 
     answer = response["message"]["content"].strip().lower()
+    print(f"   Ollama → {answer}")
 
-    for intent in intentions:
-        if intent["id"].lower() in answer:
-            return intent
+    # Extraire uniquement les IDs qui apparaissent en premier
+    import re
+    found_ids = re.findall(r'i\d+', answer)
+    found_ids = found_ids[:3]  # max 3
 
-    return None
+    detected = []
+    for iid in found_ids:
+        intent = next((i for i in intentions if i["id"].lower() == iid), None)
+        if intent:
+            detected.append(intent)
 
+    return detected if detected else None
 
+# =====================
+# Calcul ressources
+# =====================
 def total_resources(service_ids):
     total = {"CPU": 0, "MEM": 0, "DISK": 0, "BW": 0}
     for s in services:
@@ -68,22 +77,25 @@ def total_resources(service_ids):
     return total
 
 
+# =====================
+# Sélection nœud optimal
+# =====================
 def select_node_with_latency(required, qos_latency):
-    best_node = None
+    best_node    = None
     best_latency = 9999
 
     for node in nodes:
         cap = node["capacity"]
 
         if not (
-            cap["CPU"] >= required["CPU"]
-            and cap["MEM"] >= required["MEM"]
-            and cap["DISK"] >= required["DISK"]
-            and cap["BW"] >= required["BW"]
+            cap["CPU"]  >= required["CPU"]  and
+            cap["MEM"]  >= required["MEM"]  and
+            cap["DISK"] >= required["DISK"] and
+            cap["BW"]   >= required["BW"]
         ):
             continue
 
-        node_id = node["id"]
+        node_id  = node["id"]
         lat_list = latency_map.get(node_id, [])
 
         if not lat_list:
@@ -93,20 +105,20 @@ def select_node_with_latency(required, qos_latency):
 
         if avg_latency <= qos_latency and avg_latency < best_latency:
             best_latency = avg_latency
-            best_node = node_id
+            best_node    = node_id
 
     return best_node, best_latency
 
 
 # =====================
-# ENREGISTREMENT CONTINU
+# BOUCLE PRINCIPALE
 # =====================
 print("🎤 Parle... appuie sur ENTER quand tu as fini")
 
 while True:
-    input("Appuie sur ENTER pour commencer à parler...")
+    input("\nAppuie sur ENTER pour commencer à parler...")
     print("Enregistrement... parle maintenant")
-    
+
     audio = sd.rec(int(60 * fs), samplerate=fs, channels=1)
     input("Appuie sur ENTER pour arrêter")
     sd.stop()
@@ -114,29 +126,29 @@ while True:
     temp = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
     write(temp.name, fs, audio)
 
-    result = model.transcribe(temp.name, language="fr")
-    text = result["text"].strip()
+    result = model.transcribe(temp.name)
+    text   = result["text"].strip()
 
     if text:
-        print("\n🗣️ Texte détecté :", text)
+        print(f"\n🗣️ Texte détecté : {text}")
 
-        intent = detect_intention_with_ai(text)
+        intents = detect_intention_with_ai(text)
 
-        if intent:
-            print("🎯 Intention :", intent["description"])
+        if intents:
+            print(f"\n🎯 {len(intents)} intention(s) détectée(s) :")
+            for intent in intents:
+                print(f"\n   📌 {intent['id']} — {intent['description']}")
+                print(f"   Services : {', '.join(intent['services'])}")
 
-            required = total_resources(intent["services"])
-            print("⚙️ Ressources nécessaires :", required)
+                required = total_resources(intent["services"])
+                print(f"   Ressources : CPU={required['CPU']} MEM={required['MEM']} BW={required['BW']}Mbps")
 
-            qos_latency = intent["QoS"]["latency"]
+                node, lat = select_node_with_latency(required, intent["QoS"]["latency"])
 
-            node, lat = select_node_with_latency(required, qos_latency)
-
-            if node:
-                print(f"🖥️ Nœud choisi : {node} (latence {lat:.1f} ms)")
-            else:
-                print("❌ Aucun nœud respecte la latence")
-
+                if node:
+                    print(f"   ✅ Nœud : {node.upper()} ({lat:.1f} ms)")
+                else:
+                    print(f"   ❌ Aucun nœud disponible")
         else:
             print("❌ Intention non trouvée")
 

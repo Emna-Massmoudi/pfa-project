@@ -23,7 +23,31 @@ import whisper
 import sounddevice as sd
 from scipy.io.wavfile import write
 import tempfile, os, json, warnings, threading, time, asyncio
-import pyttsx3
+import requests as http_requests
+import numpy as np
+
+# ── Isolation du bruit ──
+try:
+    import noisereduce as nr
+    NOISEREDUCE_OK = True
+except ImportError:
+    NOISEREDUCE_OK = False
+    print("⚠️  noisereduce non installé — pip install noisereduce")
+
+try:
+    import webrtcvad
+    WEBRTCVAD_OK = True
+except ImportError:
+    WEBRTCVAD_OK = False
+    print("⚠️  webrtcvad non installé — pip install webrtcvad")
+
+# ── Neo4j ──
+try:
+    from neo4j import GraphDatabase
+    NEO4J_AVAILABLE = True
+except ImportError:
+    NEO4J_AVAILABLE = False
+    print("⚠️  neo4j non installé — pip install neo4j")
 import uvicorn
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
@@ -53,15 +77,79 @@ latency_map = data["latency"]
 print(f"✅ Dataset chargé : {len(nodes)} nœuds, {len(services)} services, {len(intentions)} intentions")
 
 # ═══════════════════════════════════════════════════════
+# MAPPING VOCAL — phrases naturelles → intentions
+# ═══════════════════════════════════════════════════════
+VOICE_MAPPING = {
+    "i1":  ["replace power unit", "power unit", "remplacer unité"],
+    "i2":  ["machine status", "operational status", "état machine", "statut", "operational stage", "machine stage", "operational state", "retrieve operational", "status of the machine"],
+    "i3":  ["ar sequence", "ar assembly", "ar service", "deploy ar",
+            "déployer ar", "service ar", "ar generator", "augmented reality",
+            "show me the ar", "show ar", "ar for power", "ar for assembly"],
+    "i4":  ["highlight errors", "errors assembly", "erreurs assemblage"],
+    "i5":  ["motor temperature", "temperature anomaly", "température moteur",
+            "motor overheat", "surchauffe moteur", "check temperature"],
+    "i6":  ["lubrication", "lubrifier", "moving parts", "lubricate"],
+    "i7":  ["ar belt", "belt replacement", "remplacement courroie", "belt ar"],
+    "i8":  ["conveyor belt", "belt wear", "belt damage", "detect belt"],
+    "i9":  ["ar gear", "gear alignment", "alignement engrenage"],
+    "i10": ["vibration data", "vibration analysis", "analyse vibration",
+            "abnormal patterns", "vibration abnormal"],
+    "i11": ["electrical connections", "signal integrity", "connexions électriques"],
+    "i12": ["ar safety overlay", "safety overlay", "ar safety"],
+    "i13": ["temperature sensors", "current sensors", "monitor temperature"],
+    "i14": ["detect errors", "error detection", "identify error",
+            "error detector", "identify problem", "use error detector"],
+    "i15": ["full diagnostics", "complete diagnostics", "diagnostic complet", "full dies", "diagnostics after maintenance", "perform full", "perform diagnostics"],
+    "i16": ["predictive maintenance", "maintenance prédictive", "high risk"],
+    "i17": ["ar troubleshoot", "ar fault guidance", "ar dépannage"],
+    "i18": ["post maintenance efficiency", "operational efficiency", "post-maintenance", "post mantanons", "verify the post", "maintenance operational efficiency", "return system to production"],
+    "i19": ["ar summary maintenance", "maintenance summary ar"],
+    "i20": ["components attention", "maintenance alert"],
+    "i21": ["belt tension", "conveyor tension", "belt alignment"],
+    "i22": ["ar fan", "fan assembly", "ar ventilateur"],
+    "i23": ["fan vibration", "vibration fan", "fan analysis"],
+    "i24": ["ar hazard", "hazardous areas", "ar danger"],
+    "i25": ["voice command", "voice conversion", "conversion vocale",
+            "voice control", "commande vocale"],
+    "i26": ["machine errors logs", "error logs", "retrieve logs"],
+    "i27": ["ar valve", "valve replacement", "remplacement vanne"],
+    "i28": ["hydraulic leak", "fuite hydraulique", "leak detection", "hydraulic"],
+    "i29": ["pipeline pressure", "pressure levels", "pression pipeline"],
+    "i30": ["ar gearbox", "gearbox inspection", "inspection gearbox"],
+    "i31": ["gearbox teeth", "gear wear", "usure engrenage"],
+    "i32": ["motor load", "motor vibration", "analyze motor", "charge moteur"],
+    "i33": ["cable connections", "electrical cable", "câbles électriques"],
+    "i34": ["ar reactivate", "ar safety reactivate"],
+    "i35": ["sensor monitoring", "monitor sensors", "surveiller capteurs"],
+    "i36": ["assembly inconsistency", "detect inconsistency"],
+    "i37": ["system diagnostics", "full system diagnostics"],
+    "i38": ["predictive alert", "high risk alert"],
+    "i39": ["ar troubleshooting faults", "ar guidance troubleshoot"],
+    "i40": ["post maintenance verify", "verify efficiency"],
+    "i41": ["ar summary all steps", "ar all maintenance"],
+    "i42": ["components alert", "alert components"],
+    "i43": ["video capture", "quality review", "capture vidéo"],
+    "i44": ["fault history", "historical fault data", "historique pannes"],
+    "i45": ["ar motor replacement", "motor replacement ar"],
+    "i46": ["motor anomaly", "motor current", "detect motor fault",
+            "motor fault", "anomaly motor", "anomalie moteur",
+            "activate anomaly", "anomaly analyzer", "activate anomaly analyzer"],
+    "i47": ["alignment mechanical", "mechanical alignment", "verify alignment"],
+    "i48": ["final check", "final system check", "vérification finale"],
+    "i49": ["maintenance report", "generate report", "rapport maintenance"],
+    "i50": ["maintenance cycle alert", "next maintenance cycle"],
+}
+
+# ═══════════════════════════════════════════════════════
 # ÉTAT GLOBAL — partagé entre vocal et dashboard
 # ═══════════════════════════════════════════════════════
 state = {
-    "nodes":      [],          # état actuel des nœuds
-    "placements": [],          # historique des placements
-    "listening":  False,       # micro actif ?
-    "last_text":  "",          # dernière transcription
-    "last_intent":"",          # dernière intention détectée
-    "last_node":  "",          # dernier nœud sélectionné
+    "nodes":      [],
+    "placements": [],
+    "listening":  False,
+    "last_text":  "",
+    "last_intent":"",
+    "last_node":  "",
     "stats": {
         "total": 0,
         "success": 0,
@@ -69,29 +157,132 @@ state = {
     }
 }
 
-# Initialiser l'état des nœuds
-def init_nodes():
-    state["nodes"] = []
-    for nd in nodes:
-        lats = latency_map.get(nd["id"], [50])
-        avg_lat = round(sum(lats) / len(lats), 1)
-        state["nodes"].append({
-            "id":       nd["id"],
-            "type":     nd["type"],
-            "cpu":      nd["capacity"]["CPU"],
-            "mem":      nd["capacity"]["MEM"],
-            "disk":     nd["capacity"]["DISK"],
-            "bw":       nd["capacity"]["BW"],
-            "cpu_used": 0,
-            "mem_used": 0,
-            "disk_used":0,
-            "bw_used":  0,
-            "lat":      avg_lat,
-            "intents":  [],
-            "active":   False,
-        })
+def init_nodes(reset_load=True):
+    if reset_load or not state["nodes"]:
+        state["nodes"] = []
+        for nd in nodes:
+            lats    = latency_map.get(nd["id"], [50])
+            avg_lat = round(sum(lats) / len(lats), 1)
+            lat_min = round(min(lats), 1)
+            lat_max = round(max(lats), 1)
+            state["nodes"].append({
+                "id":        nd["id"],
+                "type":      nd["type"],
+                "cpu":       nd["capacity"]["CPU"],
+                "mem":       nd["capacity"]["MEM"],
+                "disk":      nd["capacity"]["DISK"],
+                "bw":        nd["capacity"]["BW"],
+                "cpu_used":  0,
+                "mem_used":  0,
+                "disk_used": 0,
+                "bw_used":   0,
+                "lat":       avg_lat,
+                "lat_min":   lat_min,
+                "lat_max":   lat_max,
+                "intents":   [],
+                "active":    False,
+            })
 
 init_nodes()
+
+# ═══════════════════════════════════════════════════════
+# NEO4J
+# ═══════════════════════════════════════════════════════
+NEO4J_URI      = "bolt://127.0.0.1:7687"
+NEO4J_USER     = "neo4j"
+NEO4J_PASSWORD = "emnakhouloudazizyoussef"
+NEO4J_DB       = "neo4j"
+
+neo4j_driver = None
+
+def neo4j_connect():
+    global neo4j_driver
+    if not NEO4J_AVAILABLE:
+        return False
+    try:
+        neo4j_driver = GraphDatabase.driver(
+            NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD)
+        )
+        neo4j_driver.verify_connectivity()
+        print("✅ Neo4j connecté")
+        return True
+    except Exception as e:
+        print(f"⚠️  Neo4j non disponible : {e}")
+        neo4j_driver = None
+        return False
+
+def neo4j_write_voice_placement(intent: dict, results: list, text: str):
+    if not neo4j_driver:
+        return
+    try:
+        with neo4j_driver.session(database=NEO4J_DB) as session:
+            ts = time.strftime("%H:%M:%S")
+            session.run("""
+                MATCH (i:Intention {id:$iid})-[r:PLACED_ON]->()
+                DELETE r
+            """, iid=intent["id"])
+
+            for r in results:
+                if not r["node"]:
+                    session.run("""
+                        MERGE (i:Intention {id:$iid})
+                        SET i.description = $desc,
+                            i.failed      = true,
+                            i.voice_text  = $text,
+                            i.timestamp   = $ts,
+                            i.success     = false
+                    """, iid=intent["id"], desc=intent["description"],
+                        text=text[:80], ts=ts)
+                else:
+                    node_id = r["node"]
+                    lat     = r["lat"]
+                    grouped = r.get("grouped", False)
+                    session.run("""
+                        MERGE (i:Intention {id:$iid})
+                        SET i.description = $desc,
+                            i.failed      = false,
+                            i.success     = true,
+                            i.voice_text  = $text,
+                            i.timestamp   = $ts,
+                            i.services    = $svcs
+                        WITH i
+                        MERGE (n:IbnNode {id:$nid})
+                        MERGE (i)-[p:PLACED_ON]->(n)
+                        SET p.latency   = $lat,
+                            p.timestamp = $ts,
+                            p.grouped   = $grouped,
+                            p.voice     = true
+                    """,
+                        iid=intent["id"], desc=intent["description"],
+                        text=text[:80], ts=ts,
+                        svcs=", ".join(intent["services"]),
+                        nid=node_id, lat=lat, grouped=grouped,
+                    )
+            print(f"   📡 Neo4j mis à jour : {intent['id']}")
+    except Exception as e:
+        print(f"   ⚠️  Neo4j error : {e}")
+
+def neo4j_clear_voice():
+    if not neo4j_driver:
+        return
+    try:
+        with neo4j_driver.session(database=NEO4J_DB) as session:
+            session.run("""
+                MATCH (i:Intention)-[r:PLACED_ON]->()
+                WHERE r.voice = true
+                DELETE r
+            """)
+            session.run("""
+                MATCH (i:Intention)
+                WHERE i.voice_text IS NOT NULL
+                REMOVE i.voice_text, i.timestamp
+                SET i.failed = false, i.success = false
+            """)
+        print("🗑️  Neo4j — placements vocaux effacés")
+    except Exception as e:
+        print(f"⚠️  Neo4j clear error : {e}")
+
+neo4j_connect()
 
 # ═══════════════════════════════════════════════════════
 # MOTEUR DE PLACEMENT
@@ -105,7 +296,6 @@ def total_resources(service_ids):
     return total
 
 def get_available(node_id):
-    """Retourne les ressources disponibles d'un nœud."""
     nd_state = next((n for n in state["nodes"] if n["id"] == node_id), None)
     nd_cap   = next((n for n in nodes if n["id"] == node_id), None)
     if not nd_state or not nd_cap:
@@ -118,7 +308,6 @@ def get_available(node_id):
     }
 
 def best_node_for(required, qos_latency):
-    """Trouve le meilleur nœud pour des ressources données."""
     best_node, best_lat = None, 9999
     for nd in nodes:
         avail = get_available(nd["id"])
@@ -136,18 +325,12 @@ def best_node_for(required, qos_latency):
     return best_node, round(best_lat, 1) if best_node else None
 
 def select_node(required, qos_latency, service_ids):
-    """
-    Algorithme de placement hybride :
-    Étape 1 : Essayer de placer TOUS les services sur UN seul nœud
-    Étape 2 : Si impossible → distribuer chaque service sur le meilleur nœud
-    Retourne : liste de {service, node, lat} ou None si échec total
-    """
-    # ── Étape 1 : placement groupé ──
+    # Étape 1 : placement groupé
     node_id, lat = best_node_for(required, qos_latency)
     if node_id:
         return [{"service": "ALL", "node": node_id, "lat": lat, "grouped": True}]
 
-    # ── Étape 2 : placement distribué service par service ──
+    # Étape 2 : placement distribué service par service
     results = []
     for svc_id in service_ids:
         svc = next((s for s in services if s["id"] == svc_id), None)
@@ -162,7 +345,6 @@ def select_node(required, qos_latency, service_ids):
         nd, lt = best_node_for(svc_req, qos_latency)
         if nd:
             results.append({"service": svc_id, "node": nd, "lat": lt, "grouped": False})
-            # Réserver les ressources immédiatement pour les prochains services
             apply_service_to_node(nd, svc_req)
         else:
             results.append({"service": svc_id, "node": None, "lat": None, "grouped": False})
@@ -170,7 +352,6 @@ def select_node(required, qos_latency, service_ids):
     return results if results else None
 
 def apply_service_to_node(node_id, req):
-    """Réserve les ressources d'un service sur un nœud."""
     import random
     for nd in state["nodes"]:
         if nd["id"] == node_id:
@@ -185,16 +366,12 @@ def apply_service_to_node(node_id, req):
             break
 
 def apply_placement(intent, results):
-    """Met à jour l'état des nœuds après placement distribué."""
-    import random
     for r in results:
         if not r["node"]:
             continue
-        # Si groupé, appliquer toutes les ressources de l'intention
         if r.get("grouped"):
             req = total_resources(intent["services"])
             apply_service_to_node(r["node"], req)
-        # Sinon déjà appliqué dans select_node
         for nd in state["nodes"]:
             if nd["id"] == r["node"]:
                 if intent["id"] not in nd["intents"]:
@@ -202,84 +379,255 @@ def apply_placement(intent, results):
                 break
 
 def detect_intention(text: str):
-    """Détecte UNE intention IBN (compatibilité)."""
     results = detect_multiple_intentions(text)
     return results[0] if results else None
 
-def detect_multiple_intentions(text: str):
-    """
-    Détecte PLUSIEURS intentions IBN dans un paragraphe.
-    Retourne une liste triée par score décroissant.
-    """
+def prefilter_intentions(text: str, top_n: int = 10) -> list:
     text_lower = text.lower()
     text_words = set(text_lower.split())
 
-    # Mots-clés des services
     service_keywords = {
-        "s1": ["voice", "vocal", "speak", "audio", "parole", "voix", "conversion"],
-        "s2": ["protocol", "convert", "protocole", "converter"],
-        "s3": ["ar", "augmented", "reality", "visually", "visual", "inspect",
-               "afficher", "lunettes", "glasses", "overlay"],
-        "s4": ["content", "contenu", "show", "affichage", "display", "displayer"],
-        "s5": ["error", "erreur", "detect", "fault", "detector", "defect"],
-        "s6": ["analyze", "analyser", "anomaly", "anomalie", "diagnos",
-               "analyzer", "vibration", "current", "motor"],
-    }
-
-    # Mots-clés des intentions directement
-    intent_keywords = {
-        "overheating": ["overheat", "surchauffe", "temperature", "hot", "chaud", "noise", "bruit"],
-        "ar":          ["ar", "augmented", "visual", "inspect", "visually"],
-        "anomaly":     ["anomaly", "anomalie", "analyzer", "annamal", "annamali", "detect"],
-        "error":       ["error", "erreur", "fault", "detector", "identify", "problem"],
-        "voice":       ["voice", "vocal", "conversion", "speak"],
-        "maintenance": ["maintenance", "repair", "fix", "broken"],
-        "diagnostic":  ["diagnos", "full", "complete", "entire"],
+        "s1": ["voice", "vocal", "speak", "audio", "conversion", "voix", "record"],
+        "s2": ["protocol", "convert", "status", "operational", "retrieve", "logs"],
+        "s3": ["ar", "augmented", "reality", "visual", "inspect", "overlay",
+               "sequence", "guidance", "lunettes", "glasses", "assembly"],
+        "s4": ["content", "display", "show", "highlight", "summary", "overlay"],
+        "s5": ["error", "detect", "fault", "wear", "damage", "check", "verify",
+               "inconsisten", "alignment"],
+        "s6": ["anomaly", "analyze", "analyzer", "vibration", "motor", "temperature",
+               "pressure", "sensor", "load", "current"],
     }
 
     scored = []
-
     for intent in intentions:
         score = 0
         desc_words = set(intent["description"].lower().split())
-
-        # Score 1 — mots en commun avec la description
         score += len(desc_words & text_words) * 2
 
-        # Score 2 — mots-clés des services
         for svc_id in intent["services"]:
-            kws = service_keywords.get(svc_id, [])
-            for kw in kws:
+            for kw in service_keywords.get(svc_id, []):
                 if kw in text_lower:
                     score += 3
+                    break
 
-        # Score 3 — mots-clés directs
-        for group, kws in intent_keywords.items():
-            for kw in kws:
-                if kw in text_lower:
-                    score += 1
-
-        if score >= 3:
+        if score > 0:
             scored.append((score, intent))
 
-    # Trier par score décroissant
     scored.sort(key=lambda x: x[0], reverse=True)
+    return [it for _, it in scored[:top_n]]
 
-    # Éviter les doublons de services
-    selected  = []
-    used_svcs = set()
+def detect_with_ollama(text: str) -> list:
+    import re
 
-    for score, intent in scored:
-        intent_svcs = set(intent["services"])
-        # Accepter si au moins un service nouveau
-        new_svcs = intent_svcs - used_svcs
+    candidates = prefilter_intentions(text, top_n=10)
+    if not candidates:
+        return []
+
+    # Vérifier que i3 (ou l'intention correcte) est bien dans les candidats
+    candidate_ids = {i["id"] for i in candidates}
+    print(f"   📋 Candidats pré-filtrés : {sorted(candidate_ids)}")
+
+    word_count = len(text.split())
+    max_n = 1 if word_count <= 8 else 3
+
+    candidates_list = "\n".join(
+        [f"{i['id']}: {i['description']}"
+         for i in candidates]
+    )
+
+    print(f"   📋 Envoi de {len(candidates)} candidats à Ollama...")
+
+    prompt = f"""You are a classifier. Pick the BEST matching intention ID for the technician request.
+OUTPUT: Only the ID(s) separated by commas. Example: i3
+No explanations, no service codes, no dashes, no ranges.
+MAX {max_n} ID(s).
+
+CANDIDATE INTENTIONS:
+{candidates_list}
+
+TECHNICIAN REQUEST: {text}
+
+BEST ID(s):"""
+
+    try:
+        resp = http_requests.post(
+            "http://localhost:11434/api/generate",
+            json={
+                "model":  "llama3.2:1b",
+                "prompt": prompt,
+                "stream": False,
+                "options": {
+                    "temperature": 0.0,
+                    "num_predict": 15,
+                }
+            },
+            timeout=30,
+        )
+        if resp.status_code != 200:
+            return []
+
+        raw    = resp.json().get("response", "")
+        answer = raw.replace("\n", ",").replace(" ", "").strip().lower()
+        print(f"   🤖 Ollama → {answer}")
+
+        found_ids = re.findall(r'i\d+', answer)
+        found_ids = list(dict.fromkeys(found_ids))[:max_n]
+
+        # Garder seulement les IDs qui étaient dans les candidats
+        detected = []
+        for iid in found_ids:
+            if iid not in candidate_ids:
+                print(f"   ⚠️  Ollama a inventé {iid} (hors candidats) — ignoré")
+                continue
+            intent = next((i for i in intentions if i["id"] == iid), None)
+            if intent:
+                detected.append(intent)
+
+        return detected
+
+    except Exception as e:
+        print(f"   ⚠️  Ollama error : {e}")
+        return []
+
+def keyword_fallback(text: str) -> list:
+    text_lower = text.lower()
+    text_words = set(text_lower.split())
+    scored = {}
+
+    # Score 1 — VOICE_MAPPING (phrases naturelles — priorité maximale)
+    for intent_id, keywords in VOICE_MAPPING.items():
+        for kw in keywords:
+            if kw in text_lower:
+                scored[intent_id] = scored.get(intent_id, 0) + 5
+                break
+
+    # Score 2 — mots communs avec description
+    for intent in intentions:
+        desc_w = set(intent["description"].lower().split())
+        overlap = len(desc_w & text_words)
+        if overlap > 0:
+            scored[intent["id"]] = scored.get(intent["id"], 0) + overlap
+
+    # Score 3 — service keywords
+    svc_kw = {
+        "s1": ["voice","vocal","conversion","speak","audio"],
+        "s2": ["protocol","status","retrieve","logs","operational"],
+        "s3": ["ar","augmented","visual","inspect","overlay","sequence","deploy","assembly"],
+        "s4": ["display","content","show","highlight","summary"],
+        "s5": ["error","detect","fault","wear","damage","verify","check"],
+        "s6": ["anomaly","analyze","vibration","motor","temperature","sensor","load"],
+    }
+    for intent in intentions:
+        for svc_id in intent["services"]:
+            for kw in svc_kw.get(svc_id, []):
+                if kw in text_lower:
+                    scored[intent["id"]] = scored.get(intent["id"], 0) + 2
+                    break
+
+    # Pénalité intentions larges (i15, i37, i48)
+    for intent in intentions:
+        nb = len(intent["services"])
+        if nb >= 5:
+            scored[intent["id"]] = scored.get(intent["id"], 0) * 0.15
+        elif nb >= 4:
+            scored[intent["id"]] = scored.get(intent["id"], 0) * 0.5
+
+    sorted_intents = sorted(scored.items(), key=lambda x: x[1], reverse=True)
+    max_intents    = 1 if len(text.split()) <= 8 else 3
+
+    print(f"\n   📊 Top 5 keyword scores :")
+    for iid, sc in sorted_intents[:5]:
+        print(f"      {iid} → {round(sc,1)}")
+
+    selected, used_svcs = [], set()
+    for intent_id, score in sorted_intents:
+        if score < 2:
+            break
+        intent = next((i for i in intentions if i["id"] == intent_id), None)
+        if not intent:
+            continue
+        new_svcs = set(intent["services"]) - used_svcs
         if new_svcs:
             selected.append(intent)
-            used_svcs.update(intent_svcs)
-        if len(selected) >= 4:  # max 4 intentions par paragraphe
+            used_svcs.update(intent["services"])
+        if len(selected) >= max_intents:
             break
 
     return selected
+
+def detect_multiple_intentions(text: str) -> list:
+    """
+    Détection hybride intelligente :
+    - Français → Keyword fallback direct
+    - Anglais  → Ollama sur candidats pré-filtrés
+                 Si Ollama invalide → keyword pur (Ollama ignoré complètement)
+    """
+    fr_words = {"je", "tu", "il", "nous", "vous", "la", "le", "les", "un", "une",
+                "est", "que", "qui", "comment", "veux", "dois", "puis", "faut",
+                "déployer", "activer", "analyser", "détect"}
+    words = set(text.lower().split())
+    is_french = len(words & fr_words) >= 1
+
+    if is_french:
+        print(f"\n   🇫🇷 Langue FR → Keyword fallback")
+        detected = keyword_fallback(text)
+        if detected:
+            print(f"   ✅ Keyword : {[i['id'] for i in detected]}")
+        return detected
+
+    # ── Anglais → Ollama ──
+    print(f"\n   🧠 Langue EN → Ollama (candidats pré-filtrés)...")
+    ollama_detected = detect_with_ollama(text)
+
+    text_lower = text.lower()
+
+    if ollama_detected:
+        # Validation par score keyword : l'intention Ollama doit scorer
+        # mieux que le top-1 keyword OU être dans le top-3 keyword
+        kw_scores = {}
+        for intent_id, keywords in VOICE_MAPPING.items():
+            for kw in keywords:
+                if kw in text_lower:
+                    kw_scores[intent_id] = kw_scores.get(intent_id, 0) + 5
+                    break
+        for intent in intentions:
+            desc_w = set(intent["description"].lower().split())
+            overlap = len(desc_w & set(text_lower.split()))
+            if overlap:
+                kw_scores[intent["id"]] = kw_scores.get(intent["id"], 0) + overlap
+
+        # Top 3 keyword IDs
+        top_kw = [iid for iid, _ in sorted(kw_scores.items(),
+                   key=lambda x: x[1], reverse=True)[:3]]
+
+        valid = []
+        for intent in ollama_detected:
+            ollama_score = kw_scores.get(intent["id"], 0)
+            top1_score   = kw_scores.get(top_kw[0], 0) if top_kw else 0
+
+            # Valide si : dans top3 keyword OU score >= 50% du top1
+            if intent["id"] in top_kw or (top1_score > 0 and ollama_score >= top1_score * 0.5):
+                valid.append(intent)
+            else:
+                print(f"   ⚠️  Ollama {intent['id']} rejeté (kw_score={ollama_score}, top1={top1_score}, top3={top_kw})")
+
+        if valid:
+            print(f"   ✅ Ollama validé par keyword-score : {[i['id'] for i in valid]}")
+            return valid
+
+        # Ollama invalide → keyword pur
+        print(f"   ⚠️  Ollama invalide → Keyword fallback pur")
+        detected = keyword_fallback(text)
+        if detected:
+            print(f"   ✅ Keyword : {[i['id'] for i in detected]}")
+        return detected
+
+    # Ollama retourne rien → keyword fallback
+    print(f"   ⚠️  Ollama vide → Keyword fallback")
+    detected = keyword_fallback(text)
+    if detected:
+        print(f"   ✅ Keyword : {[i['id'] for i in detected]}")
+    return detected
 
 # ═══════════════════════════════════════════════════════
 # WHISPER
@@ -288,36 +636,117 @@ print(f"⏳ Chargement Whisper '{WHISPER_MODEL}'...")
 whisper_model = whisper.load_model(WHISPER_MODEL)
 print("✅ Whisper prêt")
 
+def remove_noise(audio: np.ndarray, sr: int) -> np.ndarray:
+    if not NOISEREDUCE_OK:
+        return audio
+    try:
+        audio_f = audio.flatten().astype(np.float32)
+        noise_sample = audio_f[:int(sr * 0.5)]
+        reduced = nr.reduce_noise(
+            y=audio_f,
+            sr=sr,
+            y_noise=noise_sample,
+            prop_decrease=0.85,
+            stationary=False,
+        )
+        return reduced.reshape(audio.shape)
+    except Exception as e:
+        print(f"   ⚠️  noisereduce error : {e}")
+        return audio
+
+def detect_voice_activity(audio: np.ndarray, sr: int) -> np.ndarray:
+    if not WEBRTCVAD_OK:
+        return audio
+    try:
+        vad = webrtcvad.Vad(2)
+        audio_int16 = (audio.flatten() * 32767).astype(np.int16)
+        frame_ms   = 30
+        frame_size = int(sr * frame_ms / 1000)
+        frames     = []
+        voiced     = []
+
+        for i in range(0, len(audio_int16) - frame_size, frame_size):
+            frame = audio_int16[i:i + frame_size]
+            frame_bytes = frame.tobytes()
+            try:
+                is_speech = vad.is_speech(frame_bytes, sr)
+            except:
+                is_speech = True
+            frames.append(frame)
+            voiced.append(is_speech)
+
+        context = 3
+        keep = set()
+        for i, v in enumerate(voiced):
+            if v:
+                for j in range(max(0, i-context), min(len(voiced), i+context+1)):
+                    keep.add(j)
+
+        if not keep:
+            print("   ⚠️  VAD : aucune voix détectée, audio original gardé")
+            return audio
+
+        kept_frames = [frames[i] for i in sorted(keep)]
+        audio_clean = np.concatenate(kept_frames).astype(np.float32) / 32767.0
+        voice_ratio = len(keep) / max(len(frames), 1) * 100
+        print(f"   🎙️  VAD : {voice_ratio:.0f}% de voix détectée")
+        return audio_clean.reshape(-1, 1)
+
+    except Exception as e:
+        print(f"   ⚠️  webrtcvad error : {e}")
+        return audio
+
 def transcribe(audio_array) -> tuple[str, str]:
+    print("   🔊 Traitement audio...")
+    audio = audio_array.astype(np.float32)
+    if audio.max() > 1.0:
+        audio = audio / 32768.0
+
+    if NOISEREDUCE_OK:
+        audio = remove_noise(audio, SAMPLE_RATE)
+        print("   ✅ noisereduce appliqué")
+
+    if WEBRTCVAD_OK:
+        audio = detect_voice_activity(audio, SAMPLE_RATE)
+
     temp = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
-    write(temp.name, SAMPLE_RATE, audio_array)
-    result = whisper_model.transcribe(temp.name, fp16=False)
+    write(temp.name, SAMPLE_RATE, audio)
+
+    result = whisper_model.transcribe(
+        temp.name,
+        fp16=False,
+        initial_prompt=(
+            "IBN technician commands: deploy AR service, voice conversion, "
+            "anomaly analyzer, error detector, motor fault, belt replacement, "
+            "vibration analysis, hydraulic leak, sensor calibration, "
+            "AR guidance, predictive maintenance, detect fault."
+        ),
+        language=None,
+        temperature=0.0,
+    )
+
     try:
         os.remove(temp.name)
     except:
         pass
+
     return result["text"].strip(), result.get("language", "en")
 
 # ═══════════════════════════════════════════════════════
 # TTS
 # ═══════════════════════════════════════════════════════
-tts = pyttsx3.init()
-tts.setProperty("rate", 155)
-tts.setProperty("volume", 1.0)
-
 def speak(text: str, lang: str = "en"):
-    short = text[:350]
-    voices = tts.getProperty("voices")
-    for v in voices:
-        name = v.name.lower()
-        if lang == "fr" and ("french" in name or "fr_" in name):
-            tts.setProperty("voice", v.id)
-            break
-        elif lang == "en" and "english" in name:
-            tts.setProperty("voice", v.id)
-            break
-    tts.say(short)
-    tts.runAndWait()
+    try:
+        short = text[:300].replace('"', '').replace("'", '')
+        import subprocess
+        subprocess.Popen([
+            'PowerShell', '-Command',
+            f'Add-Type -AssemblyName System.Speech; '
+            f'$s = New-Object System.Speech.Synthesis.SpeechSynthesizer; '
+            f'$s.Speak("{short}")'
+        ], creationflags=subprocess.CREATE_NO_WINDOW)
+    except Exception as e:
+        print(f"   ⚠️  TTS error : {e}")
 
 # ═══════════════════════════════════════════════════════
 # FASTAPI + WEBSOCKET DASHBOARD
@@ -326,11 +755,9 @@ app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"],
                    allow_methods=["*"], allow_headers=["*"])
 
-# Liste des clients WebSocket connectés
 ws_clients: list[WebSocket] = []
 
 async def broadcast(message: dict):
-    """Envoyer une mise à jour à tous les clients dashboard."""
     dead = []
     for ws in ws_clients:
         try:
@@ -344,7 +771,6 @@ async def broadcast(message: dict):
 async def websocket_endpoint(ws: WebSocket):
     await ws.accept()
     ws_clients.append(ws)
-    # Envoyer l'état initial
     await ws.send_json({"type": "init", "state": state})
     try:
         while True:
@@ -361,16 +787,92 @@ async def get_state():
     return state
 
 # ═══════════════════════════════════════════════════════
+# GÉNÉRATION DE RÉPONSE NATURELLE VIA OLLAMA
+# ═══════════════════════════════════════════════════════
+def generate_response(text: str, detected: list, placements: list, lang: str) -> str:
+    if not detected:
+        return "Aucune intention détectée. Veuillez réessayer." if lang == "fr" else "No intention detected. Please try again."
+
+    placement_summary = []
+    for i, intent in enumerate(detected):
+        p = placements[i] if i < len(placements) else None
+        if p and p.get("success"):
+            node = p.get("node") or (p.get("nodes", ["?"])[0])
+            lat  = p.get("lat", "?")
+            placement_summary.append(
+                f"- {intent['description']} → deployed on node {node} ({lat}ms)"
+            )
+        else:
+            placement_summary.append(
+                f"- {intent['description']} → FAILED (insufficient resources)"
+            )
+
+    placements_text = "\n".join(placement_summary)
+    response_lang   = "French" if lang == "fr" else "English"
+
+    prompt = f"""You are an IBN assistant for industrial technicians wearing VR glasses.
+
+The technician said: "{text}"
+
+Based on their request, the following services were deployed:
+{placements_text}
+
+Write a SHORT response (2-3 sentences max) in {response_lang} that:
+1. Acknowledges what the technician asked
+2. Confirms which services were deployed and on which nodes
+3. Is clear and professional
+
+Response:"""
+
+    try:
+        resp = http_requests.post(
+            "http://localhost:11434/api/generate",
+            json={
+                "model":  "llama3.2:1b",
+                "prompt": prompt,
+                "stream": False,
+                "options": {
+                    "temperature": 0.3,
+                    "num_predict": 80,
+                }
+            },
+            timeout=20,
+        )
+        if resp.status_code == 200:
+            answer = resp.json().get("response", "").strip()
+            answer = answer.replace("\n", " ").strip()
+            if answer:
+                print(f"   💬 Ollama réponse : {answer[:100]}...")
+                return answer
+    except Exception as e:
+        print(f"   ⚠️  Ollama response error : {e}")
+
+    # Fallback
+    if lang == "fr":
+        parts = [f"{p.get('id','?')} sur {p.get('node') or p.get('nodes',['?'])[0]}"
+                 for p in placements if p.get("success")]
+        if parts:
+            return f"{len(parts)} service(s) déployé(s) : {', '.join(parts)}."
+        return "Impossible de placer les services. Ressources insuffisantes."
+    else:
+        parts = [f"{p.get('id','?')} on {p.get('node') or p.get('nodes',['?'])[0]}"
+                 for p in placements if p.get("success")]
+        if parts:
+            return f"{len(parts)} service(s) deployed: {', '.join(parts)}."
+        return "Cannot place services. Insufficient resources."
+
+
+# ═══════════════════════════════════════════════════════
 # BOUCLE VOCALE (thread séparé)
 # ═══════════════════════════════════════════════════════
 def voice_loop():
-    """Boucle principale d'écoute vocale."""
     print("\n" + "═"*55)
     print("  IBN Voice — Placement de services")
     print(f"  Dataset : {len(intentions)} intentions, {len(nodes)} nœuds")
     print(f"  Dashboard : http://localhost:{SERVER_PORT}")
     print("═"*55)
     print("\n💡 Exemples de commandes vocales :")
+    print("   'Show me the AR sequence for power unit assembly'")
     print("   'Deploy AR service on the field'")
     print("   'I need voice conversion'")
     print("   'Activate anomaly analysis'")
@@ -383,7 +885,6 @@ def voice_loop():
             input("\n⏎  Appuie sur ENTRÉE pour parler...")
             state["listening"] = True
 
-            # Notifier le dashboard
             loop.run_until_complete(broadcast({
                 "type": "listening",
                 "listening": True
@@ -396,7 +897,6 @@ def voice_loop():
             sd.stop()
             state["listening"] = False
 
-            # Transcription
             print("⏳ Transcription...")
             text, lang = transcribe(audio)
 
@@ -407,14 +907,12 @@ def voice_loop():
             print(f"\n🗣️  [{lang.upper()}] : {text}")
             state["last_text"] = text
 
-            # Notifier dashboard
             loop.run_until_complete(broadcast({
                 "type": "transcript",
                 "text": text,
                 "lang": lang
             }))
 
-            # ── Détecter PLUSIEURS intentions ──
             detected = detect_multiple_intentions(text)
 
             if not detected:
@@ -437,11 +935,9 @@ def voice_loop():
                 print(f"   Services  : {', '.join(intent['services'])}")
                 state["last_intent"] = intent["id"]
 
-                # Calcul ressources
                 req = total_resources(intent["services"])
                 print(f"   Ressources: CPU={req['CPU']} MEM={req['MEM']} BW={req['BW']}Mbps")
 
-                # Placement hybride
                 results   = select_node(req, intent["QoS"]["latency"], intent["services"])
                 placed    = [r for r in results if r["node"]]
                 failed    = [r for r in results if not r["node"]]
@@ -486,6 +982,7 @@ def voice_loop():
                         "text":    text,
                     }
                     state["placements"].insert(0, placement)
+                    neo4j_write_voice_placement(intent, results, text)
 
                 else:
                     state["stats"]["fail"] += 1
@@ -502,22 +999,10 @@ def voice_loop():
 
             state["placements"] = state["placements"][:20]
 
-            # ── Réponse vocale résumée ──
-            if all_responses:
-                if lang == "fr":
-                    response = f"{len(all_responses)} service(s) placé(s) : {'. '.join(all_responses)}."
-                else:
-                    response = f"{len(all_responses)} service(s) placed: {'. '.join(all_responses)}."
-            else:
-                if lang == "fr":
-                    response = "Impossible de placer les services. Ressources insuffisantes."
-                else:
-                    response = "Cannot place services. Insufficient resources."
-
+            response = generate_response(text, detected, state["placements"][:len(detected)], lang)
             print(f"\n🔊 {response}")
             speak(response, lang)
 
-            # ── Mise à jour dashboard ──
             loop.run_until_complete(broadcast({
                 "type":      "placement",
                 "intents":   [i["id"] for i in detected],
@@ -552,8 +1037,6 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--t);height:100vh;overflow:hidden;transition:background .3s}
 body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(var(--b) 1px,transparent 1px),linear-gradient(90deg,var(--b) 1px,transparent 1px);background-size:40px 40px;opacity:.5;pointer-events:none}
-
-/* TOPBAR */
 .topbar{display:flex;align-items:center;gap:12px;padding:10px 24px;background:var(--s);border-bottom:1px solid var(--b);position:relative;z-index:10;flex-shrink:0}
 .logo{display:flex;align-items:center;gap:10px}
 .logo-icon{width:34px;height:34px;background:linear-gradient(135deg,#0ea5e9,#0369a1);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 0 16px rgba(14,165,233,.3)}
@@ -566,44 +1049,28 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 @keyframes micPulse{0%,100%{box-shadow:0 0 0 0 rgba(248,113,113,.3)}50%{box-shadow:0 0 0 6px rgba(248,113,113,0)}}
 .theme-btn{background:var(--s2);border:1px solid var(--b);border-radius:6px;padding:6px 10px;cursor:pointer;font-size:14px;transition:all .15s}
 .theme-btn:hover{border-color:var(--a)}
-
-/* LAYOUT */
 .main{display:flex;height:calc(100vh - 53px);gap:0;position:relative;z-index:1}
-
-/* LEFT */
 .left{flex:1;display:flex;flex-direction:column;gap:10px;padding:14px;overflow-y:auto}
 .left::-webkit-scrollbar{width:3px}
 .left::-webkit-scrollbar-thumb{background:var(--b);border-radius:2px}
-
-/* CARDS */
 .card{background:var(--s);border:1px solid var(--b);border-radius:6px;padding:14px;transition:background .3s,border .3s}
 .card-title{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:var(--a);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:7px}
 .card-title::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--a);box-shadow:0 0 6px var(--a);flex-shrink:0}
-
-/* TRANSCRIPT */
 .transcript-box{background:var(--s2);border:1px solid var(--b);border-radius:4px;padding:12px;font-size:13px;color:var(--t);min-height:48px;font-style:italic;line-height:1.6}
 .transcript-box.listening{border-color:rgba(248,113,113,.4);animation:borderPulse 1.5s ease-in-out infinite}
 @keyframes borderPulse{0%,100%{border-color:rgba(248,113,113,.2)}50%{border-color:rgba(248,113,113,.6)}}
-
-/* INTENT + NODE */
 .intent-node{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
 .info-box{background:var(--s2);border:1px solid var(--b);border-radius:4px;padding:10px}
 .info-label{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--t3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px}
 .info-val{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:var(--a)}
 .info-sub{font-size:10px;color:var(--t3);margin-top:2px}
-
-/* KPI */
 .kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .kpi{background:var(--s2);border:1px solid var(--b);border-radius:4px;padding:10px}
 .kpi-val{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:var(--t)}
 .kpi-lbl{font-size:9px;color:var(--t3);letter-spacing:.08em;text-transform:uppercase;margin-top:2px}
-
-/* RIGHT */
 .right{width:360px;min-width:300px;display:flex;flex-direction:column;gap:10px;padding:14px;border-left:1px solid var(--b);overflow-y:auto}
 .right::-webkit-scrollbar{width:3px}
 .right::-webkit-scrollbar-thumb{background:var(--b);border-radius:2px}
-
-/* NODE GRID */
 .node-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px}
 .node-card{background:var(--s2);border:1px solid var(--b);border-radius:4px;padding:9px;transition:all .3s;border-left:3px solid var(--b)}
 .node-card.gw{border-left-color:#f59e0b}
@@ -618,8 +1085,6 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .bar{flex:1;height:4px;background:var(--s);border-radius:2px;overflow:hidden}
 .bar-fill{height:100%;border-radius:2px;transition:width .5s ease,background .3s}
 .res-pct{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--t2);width:24px;text-align:right}
-
-/* LOG */
 .log-list{display:flex;flex-direction:column;gap:4px;max-height:280px;overflow-y:auto}
 .log-list::-webkit-scrollbar{width:3px}
 .log-item{display:flex;align-items:flex-start;gap:7px;padding:7px 9px;border-radius:3px;border-left:2px solid;animation:logIn .25s ease both}
@@ -654,10 +1119,8 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 
 <div class="main">
 
-  <!-- LEFT -->
   <div class="left">
 
-    <!-- Transcript -->
     <div class="card">
       <div class="card-title">Reconnaissance Vocale</div>
       <div class="transcript-box" id="transcriptBox">
@@ -677,7 +1140,6 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
       </div>
     </div>
 
-    <!-- KPIs -->
     <div class="card">
       <div class="card-title">Statistiques</div>
       <div class="kpi-row">
@@ -696,7 +1158,6 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
       </div>
     </div>
 
-    <!-- Nœuds -->
     <div class="card">
       <div class="card-title">État des Nœuds en Temps Réel</div>
       <div class="node-grid" id="nodeGrid"></div>
@@ -704,10 +1165,8 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 
   </div>
 
-  <!-- RIGHT -->
   <div class="right">
 
-    <!-- Log placements -->
     <div class="card" style="flex:1">
       <div class="card-title">Journal de Placement</div>
       <div class="log-list" id="logList">
@@ -724,23 +1183,19 @@ const ws = new WebSocket('ws://localhost:""" + str(SERVER_PORT) + """/ws');
 
 ws.onmessage = (e) => {
   const msg = JSON.parse(e.data);
-
   if (msg.type === 'init') {
     renderNodes(msg.state.nodes);
     renderLog(msg.state.placements);
     updateStats(msg.state.stats);
   }
-
   if (msg.type === 'listening') {
     setListening(true);
   }
-
   if (msg.type === 'transcript') {
     setListening(false);
     document.getElementById('transcriptBox').textContent = msg.text;
     document.getElementById('transcriptBox').classList.remove('listening');
   }
-
   if (msg.type === 'placement') {
     document.getElementById('intentNode').style.display = 'grid';
     document.getElementById('intentVal').textContent    = msg.intent;
@@ -751,14 +1206,12 @@ ws.onmessage = (e) => {
     renderLog(msg.placements);
     updateStats(msg.stats);
   }
-
   if (msg.type === 'placement_failed') {
     document.getElementById('nodeVal').textContent     = 'ÉCHEC';
     document.getElementById('nodeLatency').textContent = 'Aucun nœud disponible';
     renderNodes(msg.nodes);
     updateStats(msg.stats);
   }
-
   if (msg.type === 'no_intent') {
     document.getElementById('transcriptBox').textContent =
       `❓ "${msg.text}" — Aucune intention IBN détectée`;
@@ -793,25 +1246,47 @@ function pct(used, cap) {
 function renderNodes(nodes) {
   const grid = document.getElementById('nodeGrid');
   grid.innerHTML = nodes.map(n => {
-    const cpu  = pct(n.cpu_used,  n.cpu);
-    const mem  = pct(n.mem_used,  n.mem);
+    const cpu  = pct(n.cpu_used, n.cpu);
+    const mem  = pct(n.mem_used, n.mem);
     const disk = pct(n.disk_used, n.disk);
-    const bw   = pct(n.bw_used,   n.bw);
+    const bw   = pct(n.bw_used,  n.bw);
     const isGW = n.type === 'gateway';
+    const latColor = n.lat > 70 ? '#f87171' : n.lat > 50 ? '#f59e0b' : '#22d3ee';
     return `
     <div class="node-card ${isGW?'gw':'cp'} ${n.active?'active':''}">
       <div class="node-id">
         ${n.id.toUpperCase()}
         <span class="node-badge ${isGW?'gw':'cp'}">${isGW?'GW':'CP'}</span>
       </div>
-      ${[['CPU',cpu],['MEM',mem],['DISK',disk],['BW',bw]].map(([l,v])=>`
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-bottom:6px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:8px;background:var(--s);border-radius:3px;padding:3px 5px">
+          <div style="color:var(--t3);font-size:7px">CPU</div>
+          <div style="color:#38bdf8;font-weight:700">${n.cpu_used}/${n.cpu}</div>
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:8px;background:var(--s);border-radius:3px;padding:3px 5px">
+          <div style="color:var(--t3);font-size:7px">MEM</div>
+          <div style="color:#818cf8;font-weight:700">${n.mem_used}/${n.mem}G</div>
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:8px;background:var(--s);border-radius:3px;padding:3px 5px">
+          <div style="color:var(--t3);font-size:7px">DISK</div>
+          <div style="color:#34d399;font-weight:700">${n.disk_used}/${n.disk}G</div>
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:8px;background:var(--s);border-radius:3px;padding:3px 5px">
+          <div style="color:var(--t3);font-size:7px">BW</div>
+          <div style="color:#f59e0b;font-weight:700">${n.bw_used}/${n.bw}M</div>
+        </div>
+      </div>
+      ${[['CPU',cpu,'#38bdf8'],['MEM',mem,'#818cf8'],['BW',bw,'#f59e0b']].map(([l,v,c])=>`
       <div class="res-row">
         <span class="res-lbl">${l}</span>
         <div class="bar"><div class="bar-fill" style="width:${v}%;background:${barColor(v)}"></div></div>
         <span class="res-pct">${v}%</span>
       </div>`).join('')}
-      <div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:${n.lat>70?'#f87171':n.lat>50?'#f59e0b':'#22d3ee'};margin-top:5px">
-        lat ${n.lat}ms · ${n.intents.length} intent${n.intents.length!==1?'s':''}
+      <div style="font-family:'JetBrains Mono',monospace;font-size:8px;margin-top:5px;display:flex;justify-content:space-between;align-items:center">
+        <span style="color:${latColor}">⏱ ${n.lat}ms</span>
+        <span style="color:${n.active?'#22d3ee':'var(--t3)'}">
+          ${n.intents.length} intent${n.intents.length!==1?'s':''}
+        </span>
       </div>
     </div>`;
   }).join('');
@@ -830,7 +1305,7 @@ function renderLog(placements) {
         <div class="log-id">${p.id}</div>
         <div class="log-desc">${p.desc}</div>
         ${p.success
-          ? `<div class="log-detail">→ ${p.node.toUpperCase()}  (${p.lat}ms)</div>`
+          ? `<div class="log-detail">→ ${p.node ? p.node.toUpperCase() : (p.nodes&&p.nodes[0]?p.nodes[0].toUpperCase():'?')}  (${p.lat}ms)</div>`
           : `<div class="log-fail-txt">ÉCHEC — QoS non satisfait</div>`}
       </div>
       <div class="log-time">${p.time}</div>
@@ -855,14 +1330,11 @@ function toggleTheme() {
 """
 
 # ═══════════════════════════════════════════════════════
-# MAIN — Lancer serveur + vocal en parallèle
+# MAIN
 # ═══════════════════════════════════════════════════════
 if __name__ == "__main__":
-
-    # Thread vocal
     voice_thread = threading.Thread(target=voice_loop, daemon=True)
     voice_thread.start()
 
-    # Serveur FastAPI (bloquant)
     print(f"\n🌐 Dashboard : http://localhost:{SERVER_PORT}")
     uvicorn.run(app, host="0.0.0.0", port=SERVER_PORT, log_level="warning")
